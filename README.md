@@ -4,11 +4,12 @@ Batch renaming + trimming [`pokemon_icons`](https://github.com/ZeChrales/PogoAss
 
 ## Usage
 
-Install imagemagick.
+Install imagemagick (and optionally your favorite PNG compressor).
 
 ```sh
 npm install
 node main.js /path/to/pokemon_icons /path/to/output/dir
+optipng -o7 -strip all /path/to/output/dir/*.png
 ```
 
 ## License
