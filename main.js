@@ -60,7 +60,7 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
     let outDir = process.argv[3];
     if (!inDir || !outDir) {
         console.error('Usage: node main.js <input dir> <output dir>');
-        return;
+        process.exit(1);
     }
     inDir = path.resolve(inDir);
     outDir = path.resolve(outDir);
@@ -94,9 +94,9 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
     }
     for (const suffix1 of Object.keys(formLookup)) {
         for (const suffix2 of Object.keys(formLookup)) {
-            if (suffix1 !== suffix2 && (suffix1.startsWith(suffix2) || suffix2.startsWith(suffix1))) {
+            if (suffix1 !== suffix2 && suffix1.startsWith(suffix2)) {
                 console.error('Illegal combinations found', suffix1, suffix2);
-                return;
+                process.exit(1);
             }
         }
     }
