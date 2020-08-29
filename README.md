@@ -4,6 +4,8 @@ Batch renaming + trimming [`pokemon_icons`](https://github.com/ZeChrales/PogoAss
 
 ## Usage
 
+Install imagemagick.
+
 ```sh
 npm install
 node main.js /path/to/pokemon_icons /path/to/output/dir
