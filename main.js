@@ -143,7 +143,7 @@ function convert(inDir, filename, targetPath) {
             const targetPath = path.join(outDir, 'pokemon_icon_' + target + suffix);
             if (output !== null) {
                 await fs.promises.copyFile(output, targetPath);
-            } else if (!convert(inDir, filename, targetPath)) {
+            } else if (convert(inDir, filename, targetPath)) {
                 output = targetPath;
             }
         }
