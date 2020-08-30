@@ -7,6 +7,10 @@ const gameMaster = require('pokemongo-game-master');
 
 function createFormTargets(formLookup, suffix) {
     let formTargets = formLookup[suffix];
+    if (formTargets && formTargets.fallback) {
+        console.warn('Found', suffix, 'in the gamemaster. Fallback rule will be deactivated.')
+        formTargets = undefined;
+    }
     if (formTargets === undefined) {
         return formLookup[suffix] = {
             targets: [],
@@ -81,7 +85,23 @@ function convert(inDir, filename, targetPath) {
     const formLookup = {
         '000': {    // substitute is not in gameMaster
             targets: ['000']
-        }
+        },
+        '018_51': {
+            targets: ['018_v' + POGOProtos.Enums.PokemonEvolution.EVOLUTION_MEGA],
+            fallback: true
+        },
+        '077_31': {
+            targets: ['077_' + POGOProtos.Enums.Form.PONYTA_GALARIAN],
+            fallback: true
+        },
+        '078_31': {
+            targets: ['077_' + POGOProtos.Enums.Form.RAPIDASH_GALARIAN],
+            fallback: true
+        },
+        '079_31': {
+            targets: ['077_' + POGOProtos.Enums.Form.SLOWBRO_GALARIAN],
+            fallback: true
+        },
     };
     const gameMasterContent = await gameMaster.getVersion('latest', 'json');
     for (const template of gameMasterContent.template) {
