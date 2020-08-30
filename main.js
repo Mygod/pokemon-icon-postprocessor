@@ -149,15 +149,9 @@ function convert(inDir, filename, targetPath) {
         }
     }
 
-    const female = [];
     for (const [suffix, data] of Object.entries(formLookup)) {
-        if (data.hit) {
-            for (const entry of data.targets.filter((target) => target.endsWith('_female'))) {
-                female.push(entry.substr(0, entry.length - 7));
-            }
-        } else if (!data.female) {
+        if (!data.hit && !data.female) {
             console.warn('Found form/temporary evolution with no matching assets', suffix, data);
         }
     }
-    console.log('female =', female);
 })();
