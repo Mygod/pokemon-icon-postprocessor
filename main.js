@@ -55,6 +55,18 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
     }
 }
 
+function convert(inDir, filename, targetPath) {
+    const sourcePath = path.join(inDir, filename);
+    const child = child_process.spawnSync('convert', ['-trim', '-fuzz', '1%', sourcePath, targetPath], {
+        stdio: 'inherit'
+    });
+    if (child.error || child.status) {
+        console.error('Failed to convert', sourcePath, 'exited with', child.status, child.error);
+        return false;
+    }
+    return true;
+}
+
 (async () => {
     let inDir = process.argv[2];
     let outDir = process.argv[3];
@@ -117,25 +129,22 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
             }
         }
         if (formTargets === null) {
-            console.warn('Unrecognized/unused asset', filename);
+            if (/^\d{3,}_00(_shiny)?\./.test(name)) {
+                console.log('Found unreferenced default asset', filename);
+                convert(inDir, filename, path.join(outDir, filename));
+            } else {
+                console.warn('Unrecognized/unused asset', filename);
+            }
             continue;
         }
         formTargets.hit = true;
         let output = null;
         for (const target of formTargets.targets) {
             const targetPath = path.join(outDir, 'pokemon_icon_' + target + suffix);
-            if (output === null) {
-                const sourcePath = path.join(inDir, filename);
-                const child = child_process.spawnSync('convert', ['-trim', '-fuzz', '1%', sourcePath, targetPath], {
-                    stdio: 'inherit'
-                });
-                if (child.error || child.status) {
-                    console.error('Failed to convert', sourcePath, 'exited with', child.status, child.error);
-                } else {
-                    output = targetPath;
-                }
-            } else {
+            if (output !== null) {
                 await fs.promises.copyFile(output, targetPath);
+            } else if (!convert(inDir, filename, targetPath)) {
+                output = targetPath;
             }
         }
     }
