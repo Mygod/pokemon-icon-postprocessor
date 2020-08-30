@@ -9,7 +9,7 @@ Install imagemagick (and optionally your favorite PNG compressor).
 ```sh
 npm install
 node main.js /path/to/pokemon_icons /path/to/output/dir
-optipng -o7 -strip all /path/to/output/dir/*.png
+find /path/to/output/dir -iname '*.png' -print0 | xargs -0 -n 1 -P `nproc` optipng -o7 -strip all
 ```
 
 Output file name format: (customizable via editing the code directly)
