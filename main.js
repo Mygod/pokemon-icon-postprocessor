@@ -32,10 +32,17 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
             "form": pokemon + "_NORMAL"
         }];
     }
+    let defaultAssetBundleSuffix = undefined;
     for (const formData of forms) {
         const keys = Object.keys(formData);
         const form = formData[keys[0]];
-        if (form.endsWith("_SHADOW") || form.endsWith("_PURIFIED")) {
+        let assetBundleSuffix = formData[keys[1]] || 0;
+        if (form.endsWith("_NORMAL")) {
+            defaultAssetBundleSuffix = assetBundleSuffix;
+        } else if (form.endsWith("_SHADOW") || form.endsWith("_PURIFIED")) {
+            if (defaultAssetBundleSuffix === undefined || assetBundleSuffix !== defaultAssetBundleSuffix) {
+                console.warn(form, 'is using non-default asset', assetBundleSuffix);
+            }
             continue;
         }
         const formId = computeSuffix(form);
@@ -44,7 +51,6 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
             continue;
         }
         const target = pokemonIdString + separator + formId;
-        let assetBundleSuffix = formData[keys[1]] || 0;
         if (Number.isInteger(assetBundleSuffix)) {  // is actually assetBundleValue
             if (assetBundleSuffix === 0) {
                 createFormTargets(formLookup, pokemonIdString + '_01').targets.push(target + '_female');
