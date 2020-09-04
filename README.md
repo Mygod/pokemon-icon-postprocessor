@@ -10,6 +10,7 @@ Install imagemagick (and optionally your favorite PNG compressor).
 npm install
 node main.js /path/to/pokemon_icons /path/to/output/dir
 find /path/to/output/dir -iname '*.png' -print0 | xargs -0 -n 1 -P `nproc` optipng -o7 -strip all
+find /path/to/output/dir -iname 'pokemon_icon_*.png' -printf '%f\n' | sed -e 's/^pokemon_icon_//' -e 's/\.png$//'
 ```
 
 Output file name format: (customizable via editing the code directly)
