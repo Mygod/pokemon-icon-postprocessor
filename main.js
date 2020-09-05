@@ -83,12 +83,12 @@ function convert(inDir, filename, targetPath) {
 (async () => {
     let inDir = process.argv[2];
     let outDir = process.argv[3];
-    if (!inDir || !outDir) {
-        console.error('Usage: node main.js <input dir> <output dir>');
+    if (!inDir) {
+        console.error('Usage: node main.js <input dir> [<output dir>]');
         process.exit(1);
     }
     inDir = path.resolve(inDir);
-    outDir = path.resolve(outDir);
+    outDir = outDir && path.resolve(outDir);
 
     console.log('Reading game master...');
     const formLookup = {
@@ -147,7 +147,9 @@ function convert(inDir, filename, targetPath) {
         }
     }
 
-    await fs.promises.mkdir(outDir, { recursive: true });
+    if (outDir) {
+        await fs.promises.mkdir(outDir, { recursive: true });
+    }
     for (const filename of await fs.promises.readdir(inDir)) {
         if (!filename.startsWith('pokemon_icon_')) {
             continue;
@@ -169,8 +171,11 @@ function convert(inDir, filename, targetPath) {
         formTargets.hit = true;
         let output = null;
         for (const target of formTargets.targets) {
-            const targetPath = path.join(outDir, 'pokemon_icon_' + target + suffix);
             availablePokemon.push(target + suffix.replace(/\.png$/, ''));
+            if (!outDir) {
+                continue;
+            }
+            const targetPath = path.join(outDir, 'pokemon_icon_' + target + suffix);
             if (output !== null) {
                 await fs.promises.copyFile(output, targetPath);
             } else if (convert(inDir, filename, targetPath)) {
@@ -178,7 +183,9 @@ function convert(inDir, filename, targetPath) {
             }
         }
     }
-    await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(availablePokemon));
+    if (outDir) {
+        await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(availablePokemon));
+    }
 
     let arceusFixed = true;
     for (const [suffix, data] of Object.entries(formLookup)) {
