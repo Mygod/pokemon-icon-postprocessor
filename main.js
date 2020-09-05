@@ -112,6 +112,10 @@ function convert(inDir, filename, targetPath) {
             targets: ['077_' + POGOProtos.Enums.Form.SLOWBRO_GALARIAN],
             fallback: true
         },
+        '493_00': { // 493_11 is missing
+            targets: ['493_' + POGOProtos.Enums.Form.ARCEUS_NORMAL],
+            fallback: true
+        }
     };
     const gameMasterContent = await gameMaster.getVersion('latest', 'json');
     const outputIndex = {
@@ -192,9 +196,17 @@ function convert(inDir, filename, targetPath) {
     }
     await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(outputIndex));
 
+    let arceusFixed = true;
     for (const [suffix, data] of Object.entries(formLookup)) {
         if (!data.hit && !data.female) {
-            console.warn('Found form/temporary evolution with no matching assets', suffix, data);
+            if (suffix === '493_11') {
+                arceusFixed = false;
+            } else {
+                console.warn('Found form/temporary evolution with no matching assets', suffix, data);
+            }
         }
+    }
+    if (arceusFixed) {
+        console.warn('Asset for Arceus normal form has been added');
     }
 })();
