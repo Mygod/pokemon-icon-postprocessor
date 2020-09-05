@@ -27,13 +27,13 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
     const formSettings = template.data[Object.keys(template.data)[1]];
     let forms = formSettings[Object.keys(formSettings)[1]];
     if (forms === undefined) {
-        let pokemon = template.templateId.split('_POKEMON_', 2)[1];
-        forms = [{
-            "form": pokemon + "_NORMAL"
-        }];
+        createFormTargets(formLookup, pokemonIdString + '_01').targets.push(pokemonIdString + '_00_female');
+        const formTargets = createFormTargets(formLookup, pokemonIdString + '_00');
+        formTargets.targets.push(pokemonIdString + '_00');
+        formTargets.female = false;
+        return;
     }
     let defaultAssetBundleSuffix = undefined;
-    let defaultFormId = undefined;
     for (const formData of forms) {
         const keys = Object.keys(formData);
         const form = formData[keys[0]];
@@ -43,17 +43,17 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
             continue;
         }
         let assetBundleSuffix = formData[keys[1]] || 0;
-        if (form.endsWith("_SHADOW") || form.endsWith("_PURIFIED")) {
-            if (defaultAssetBundleSuffix === undefined || assetBundleSuffix !== defaultAssetBundleSuffix) {
-                console.warn(form, 'is using non-default asset', assetBundleSuffix);
-            }
-            continue;
+        if (defaultAssetBundleSuffix === assetBundleSuffix && separator === '_') {
+            continue;   // we expect the client to fallback automatically
         }
-        if (defaultAssetBundleSuffix === undefined) {   // the game uses the first form for Pokedex images
+        let target;
+        if (defaultAssetBundleSuffix === undefined && separator === '_') {
+            // the game uses the first form for Pokedex images
             defaultAssetBundleSuffix = assetBundleSuffix;
-            defaultFormId = formId;
+            target = pokemonIdString + '_00';
+        } else {
+            target = pokemonIdString + separator + formId;
         }
-        const target = pokemonIdString + separator + formId;
         if (Number.isInteger(assetBundleSuffix)) {  // is actually assetBundleValue
             if (assetBundleSuffix === 0) {
                 createFormTargets(formLookup, pokemonIdString + '_01').targets.push(target + '_female');
@@ -62,11 +62,10 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
         } else if (assetBundleSuffix.indexOf('_00_') >= 0) {
             createFormTargets(formLookup, assetBundleSuffix.replace('_00_', '_01_')).targets.push(target + '_female');
         }
-        let formTargets = createFormTargets(formLookup, assetBundleSuffix);
+        const formTargets = createFormTargets(formLookup, assetBundleSuffix);
         formTargets.targets.push(target);
         formTargets.female = false;
     }
-    return defaultFormId;
 }
 
 function convert(inDir, filename, targetPath) {
@@ -113,29 +112,19 @@ function convert(inDir, filename, targetPath) {
             fallback: true
         },
         '493_00': { // 493_11 is missing
-            targets: ['493_' + POGOProtos.Enums.Form.ARCEUS_NORMAL],
+            targets: ['493_00'],
             fallback: true
-        }
+        },
     };
     const gameMasterContent = await gameMaster.getVersion('latest', 'json');
-    const outputIndex = {
-        availablePokemon: [],
-        defaultForms: {},
-    };
+    const availablePokemon = [];
     for (const template of gameMasterContent.template) {
         if (template.templateId.startsWith('FORMS_V')) {
             const pokemonId = parseInt(template.templateId.substr(7, 4));
             if (!pokemonId) {
                 console.warn('Unrecognized templateId', template.templateId);
             } else {
-                let defaultForm = extractFormTargets(formLookup, template, pokemonId, (form) => {
-                    return POGOProtos.Enums.Form[form];
-                });
-                if (defaultForm === undefined) {
-                    console.warn('No recognizable forms were found in', template.templateId);
-                } else {
-                    outputIndex.defaultForms[pokemonId] = defaultForm;
-                }
+                extractFormTargets(formLookup, template, pokemonId, (form) => POGOProtos.Enums.Form[form]);
             }
         } else if (template.templateId.startsWith('TEMPORARY_EVOLUTION_V')) {
             const pokemonId = parseInt(template.templateId.substr(21, 4));
@@ -174,19 +163,14 @@ function convert(inDir, filename, targetPath) {
             }
         }
         if (formTargets === null) {
-            const pokemonId = parseInt(name.split('_', 2)[0]);
-            if (pokemonId && outputIndex.defaultForms[pokemonId]) {
-                console.warn('Unrecognized/unused asset', filename);
-            } else {
-                console.warn('Unrecognized pokemon', filename);
-            }
+            console.warn('Unrecognized/unused asset', filename);
             continue;
         }
         formTargets.hit = true;
         let output = null;
         for (const target of formTargets.targets) {
             const targetPath = path.join(outDir, 'pokemon_icon_' + target + suffix);
-            outputIndex.availablePokemon.push(target + suffix.replace(/\.png$/, ''));
+            availablePokemon.push(target + suffix.replace(/\.png$/, ''));
             if (output !== null) {
                 await fs.promises.copyFile(output, targetPath);
             } else if (convert(inDir, filename, targetPath)) {
@@ -194,7 +178,7 @@ function convert(inDir, filename, targetPath) {
             }
         }
     }
-    await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(outputIndex));
+    await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(availablePokemon));
 
     let arceusFixed = true;
     for (const [suffix, data] of Object.entries(formLookup)) {

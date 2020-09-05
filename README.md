@@ -21,7 +21,8 @@ find /path/to/output/dir -iname '*.png' -print0 | xargs -0 -n 1 -P `nproc` optip
 Output file name format: (customizable via editing the code directly)
 
 ```
-pokemon_icon_<xxx pokemon id>(_<form id>|_v<temp evolution id>)[_female][_<xx costume id>][_shiny].png
+pokemon_icon_000.png
+pokemon_icon_<xxx pokemon id>(_00|_<form id>|_v<temp evolution id>)[_female][_<xx costume id>][_shiny].png
 ```
 
 ## License
