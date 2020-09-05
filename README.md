@@ -2,6 +2,12 @@
 
 Batch renaming + trimming [`pokemon_icons`](https://github.com/ZeChrales/PogoAssets/tree/master/pokemon_icons) for easier access.
 
+## I am too lazy to run it myself
+
+Compiled icons available at: https://mygod.github.io/pokicons
+
+Source: https://github.com/Mygod/pokicons
+
 ## Usage
 
 Install imagemagick (and optionally your favorite PNG compressor).
