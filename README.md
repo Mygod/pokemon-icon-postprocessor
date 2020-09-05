@@ -4,7 +4,7 @@ Batch renaming + trimming [`pokemon_icons`](https://github.com/ZeChrales/PogoAss
 
 ## I am too lazy to run it myself
 
-Compiled icons available at: https://mygod.github.io/pokicons
+Compiled icons available at: https://mygod.github.io/pokicons/v1
 
 Source: https://github.com/Mygod/pokicons
 
