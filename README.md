@@ -19,12 +19,6 @@ Output file name format: (customizable via editing the code directly)
 pokemon_icon_<xxx pokemon id>(_<form id>|_v<temp evolution id>)[_female][_<xx costume id>][_shiny].png
 ```
 
-For Pokemon that does not have a default form (Unown, Spinda, Castform, ...), you will find its default asset (if there is one available) at:
-
-```
-pokemon_icon_<xxx pokemon id>_00[_shiny].png
-```
-
 ## License
 
 Apache 2.0

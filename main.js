@@ -33,22 +33,25 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
         }];
     }
     let defaultAssetBundleSuffix = undefined;
+    let defaultFormId = undefined;
     for (const formData of forms) {
         const keys = Object.keys(formData);
         const form = formData[keys[0]];
+        const formId = computeSuffix(form);
+        if (!formId) {
+            console.warn('Unrecognized form/temp evolution', form);
+            continue;
+        }
         let assetBundleSuffix = formData[keys[1]] || 0;
-        if (form.endsWith("_NORMAL")) {
-            defaultAssetBundleSuffix = assetBundleSuffix;
-        } else if (form.endsWith("_SHADOW") || form.endsWith("_PURIFIED")) {
+        if (form.endsWith("_SHADOW") || form.endsWith("_PURIFIED")) {
             if (defaultAssetBundleSuffix === undefined || assetBundleSuffix !== defaultAssetBundleSuffix) {
                 console.warn(form, 'is using non-default asset', assetBundleSuffix);
             }
             continue;
         }
-        const formId = computeSuffix(form);
-        if (!formId) {
-            console.warn('Unrecognized form/temp evolution', form);
-            continue;
+        if (defaultAssetBundleSuffix === undefined) {   // the game uses the first form for Pokedex images
+            defaultAssetBundleSuffix = assetBundleSuffix;
+            defaultFormId = formId;
         }
         const target = pokemonIdString + separator + formId;
         if (Number.isInteger(assetBundleSuffix)) {  // is actually assetBundleValue
@@ -63,6 +66,7 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
         formTargets.targets.push(target);
         formTargets.female = false;
     }
+    return defaultFormId;
 }
 
 function convert(inDir, filename, targetPath) {
@@ -110,13 +114,24 @@ function convert(inDir, filename, targetPath) {
         },
     };
     const gameMasterContent = await gameMaster.getVersion('latest', 'json');
+    const outputIndex = {
+        availablePokemon: [],
+        defaultForms: {},
+    };
     for (const template of gameMasterContent.template) {
         if (template.templateId.startsWith('FORMS_V')) {
             const pokemonId = parseInt(template.templateId.substr(7, 4));
             if (!pokemonId) {
                 console.warn('Unrecognized templateId', template.templateId);
             } else {
-                extractFormTargets(formLookup, template, pokemonId, (form) => POGOProtos.Enums.Form[form]);
+                let defaultForm = extractFormTargets(formLookup, template, pokemonId, (form) => {
+                    return POGOProtos.Enums.Form[form];
+                });
+                if (defaultForm === undefined) {
+                    console.warn('No recognizable forms were found in', template.templateId);
+                } else {
+                    outputIndex.defaultForms[pokemonId] = defaultForm;
+                }
             }
         } else if (template.templateId.startsWith('TEMPORARY_EVOLUTION_V')) {
             const pokemonId = parseInt(template.templateId.substr(21, 4));
@@ -155,11 +170,11 @@ function convert(inDir, filename, targetPath) {
             }
         }
         if (formTargets === null) {
-            if (/^\d{3,}_00(_shiny)?\./.test(name)) {
-                console.log('Found unreferenced default asset', filename);
-                convert(inDir, filename, path.join(outDir, filename));
-            } else {
+            const pokemonId = parseInt(name.split('_', 2)[0]);
+            if (pokemonId && outputIndex.defaultForms[pokemonId]) {
                 console.warn('Unrecognized/unused asset', filename);
+            } else {
+                console.warn('Unrecognized pokemon', filename);
             }
             continue;
         }
@@ -167,6 +182,7 @@ function convert(inDir, filename, targetPath) {
         let output = null;
         for (const target of formTargets.targets) {
             const targetPath = path.join(outDir, 'pokemon_icon_' + target + suffix);
+            outputIndex.availablePokemon.push(target + suffix.replace(/\.png$/, ''));
             if (output !== null) {
                 await fs.promises.copyFile(output, targetPath);
             } else if (convert(inDir, filename, targetPath)) {
@@ -174,6 +190,7 @@ function convert(inDir, filename, targetPath) {
             }
         }
     }
+    await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(outputIndex));
 
     for (const [suffix, data] of Object.entries(formLookup)) {
         if (!data.hit && !data.female) {
