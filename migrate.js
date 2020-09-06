@@ -56,6 +56,7 @@ function extractForms(pokemon, template, pokemonId, computeSuffix, field = 'form
 const converters = {
     pmsf: async function (inDir, outDir, pokemon) {
         const outputs = {};
+        const maxCostume = Math.max.apply(null, Object.values(POGOProtos.Enums.Costume));
         for (const filename of await fs.promises.readdir(inDir)) {
             let match = /^pokemon_icon_(\d{3,})(?:_00)?(?:_([1-9]\d*))?(?:_([1-9]\d*))?(_shiny)?\.png$/.exec(filename);
             if (match === null) {
@@ -80,17 +81,28 @@ const converters = {
                         if (!isNaN(field2)) {
                             if ((pokemonEntry.evolutions || []).indexOf(field2) >= 0) {
                                 evolution = field2;
-                            } else {
+                            } else if (field2 <= maxCostume) {
                                 costume = field2;
+                            } else {
+                                console.warn('Unrecognized field', field2, 'in', filename);
+                                continue;
                             }
                         }
                     } else if ((pokemonEntry.evolutions || []).indexOf(field1) >= 0) {
                         evolution = field1;
                         if (!isNaN(field2)) {
-                            costume = field2;
+                            if (field2 <= maxCostume) {
+                                costume = field2;
+                            } else {
+                                console.warn('Unrecognized field', field2, 'in', filename);
+                                continue;
+                            }
                         }
-                    } else {
+                    } else if (field1 <= maxCostume) {
                         costume = field1;
+                    } else {
+                        console.warn('Unrecognized field', field1, 'in', filename);
+                        continue;
                     }
                 }
                 if (form !== 0 && form === pokemonEntry.forms[0]) {
