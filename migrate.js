@@ -164,6 +164,9 @@ const converters = {
     } else {
         pokemon[18].evolutions = [POGOProtos.Enums.PokemonEvolution.EVOLUTION_MEGA];
     }
+    pokemon[77].forms.push(POGOProtos.Enums.Form.PONYTA_GALARIAN);
+    pokemon[78].forms.push(POGOProtos.Enums.Form.RAPIDASH_GALARIAN);
+    pokemon[79].forms.push(POGOProtos.Enums.Form.SLOWBRO_GALARIAN);
 
     await fs.promises.mkdir(outDir, { recursive: true });
     await format(inDir, outDir, pokemon);
