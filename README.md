@@ -24,6 +24,8 @@ Output file name format: (customizable via editing the code directly)
 <pokemon id>[-e<temp evolution id>][-f<form id>][-c<costume id>][-g<gender id>][-shiny].png
 ```
 
+Additionally, you will find a `index.json` file containing an JSON array of all the filenames (minus extensions) for you to do fallbacks locally.
+
 You should use the following fallback algorithm to determine the best pokemon icon:
 
 1. Try `p-e-f-c-g-shiny` (11111)
