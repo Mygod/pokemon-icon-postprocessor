@@ -40,6 +40,7 @@ Notes for icon makers:
 
 - If the icon is for the first form of the Pokemon (usually the normal form), leave out `-f` so that it becomes the default asset
 - If it is for male pokemon or if it is genderless, leave out `-g` so that it becomes the default asset
+- Handy bash script for making `index.json` files: `python -c 'import os, json; print json.dumps([os.path.splitext(file)[0] for file in os.listdir(".") if file.endswith(".png")], separators=(",", ":"))' > index.json`
 
 ## License
 
