@@ -86,7 +86,7 @@ async function pokicon(baseUrl, pokemonId, form = 0, evolution = 0, female = fal
     return `${baseUrl}/${resolvePokemonIcon(availablePokemon[baseUrl], pokemonId, form, evolution, female, costume, shiny)}.png`
 }
 
-module.exports = pokicon;
+module.exports = pokicon
 ```
 
 ## Notes for icon makers
