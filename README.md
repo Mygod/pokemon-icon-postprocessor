@@ -18,7 +18,7 @@ node main.js /path/to/pokemon_icons /path/to/output/dir
 find /path/to/output/dir -iname '*.png' -print0 | xargs -0 -n 1 -P `nproc` optipng -o7 -strip all
 ```
 
-Output file name format: (customizable via editing the code directly)
+Output file name format follows the "Intermapping Cooperative Object Naming Standard" (ICONS). (customizable via editing the code directly)
 
 ```
 <pokemon id>[-e<temp evolution id>][-f<form id>][-c<costume id>][-g<gender id>][-shiny].png

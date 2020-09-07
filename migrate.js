@@ -176,9 +176,13 @@ const converters = {
     } else {
         pokemon[18].evolutions = [POGOProtos.Enums.PokemonEvolution.EVOLUTION_MEGA];
     }
-    pokemon[77].forms.push(POGOProtos.Enums.Form.PONYTA_GALARIAN);
-    pokemon[78].forms.push(POGOProtos.Enums.Form.RAPIDASH_GALARIAN);
-    pokemon[79].forms.push(POGOProtos.Enums.Form.SLOWBRO_GALARIAN);
+    pokemon[POGOProtos.Enums.PokemonId.PONYTA].forms.push(POGOProtos.Enums.Form.PONYTA_GALARIAN);
+    pokemon[POGOProtos.Enums.PokemonId.RAPIDASH].forms.push(POGOProtos.Enums.Form.RAPIDASH_GALARIAN);
+    pokemon[POGOProtos.Enums.PokemonId.SLOWPOKE].forms.push(POGOProtos.Enums.Form.SLOWPOKE_GALARIAN);
+    pokemon[POGOProtos.Enums.PokemonId.SLOWBRO].forms.push(POGOProtos.Enums.Form.SLOWBRO_GALARIAN);
+    pokemon[POGOProtos.Enums.PokemonId.MR_MIME].forms.push(POGOProtos.Enums.Form.MR_MIME_GALARIAN);
+    pokemon[POGOProtos.Enums.PokemonId.CORSOLA].forms.push(POGOProtos.Enums.Form.CORSOLA_GALARIAN);
+    pokemon[POGOProtos.Enums.PokemonId.YAMASK].forms.push(POGOProtos.Enums.Form.YAMASK_GALARIAN);
 
     await fs.promises.mkdir(outDir, { recursive: true });
     await format(inDir, outDir, pokemon);
