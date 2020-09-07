@@ -5,6 +5,40 @@ const path = require('path');
 const POGOProtos = require('pogo-protos');
 const gameMaster = require('pokemongo-game-master');
 
+class PartialPokemonDisplay {
+    // costume and shiny will not appear in gamemaster
+    constructor(pokemonId, gender = 0, form = 0, evolution = 0) {
+        this.pokemonId = pokemonId;
+        this.gender = gender;
+        this.form = form;
+        this.evolution = evolution;
+    }
+
+    filename(costume = 0, shiny = false) {
+        let result = String(this.pokemonId);
+        if (this.evolution) {
+            result += '-e' + this.evolution;
+        }
+        if (this.form) {
+            result += '-f' + this.form;
+        }
+        if (costume) {
+            result += '-c' + costume;
+        }
+        if (this.gender) {
+            result += '-g' + this.gender;
+        }
+        if (shiny) {
+            result += '-shiny';
+        }
+        return result;
+    }
+}
+
+function changeGender(other, gender = POGOProtos.Enums.Gender.FEMALE) {
+    return new PartialPokemonDisplay(other.pokemonId, gender, other.form, other.evolution);
+}
+
 function createFormTargets(formLookup, suffix) {
     let formTargets = formLookup[suffix];
     if (formTargets && formTargets.fallback) {
@@ -22,14 +56,15 @@ function createFormTargets(formLookup, suffix) {
     }
 }
 
-function extractFormTargets(formLookup, template, pokemonId, computeSuffix, separator = '_') {
+function extractFormTargets(formLookup, template, pokemonId, computeSuffix, field = 'form') {
     const pokemonIdString = String(pokemonId).padStart(3, '0');
     const formSettings = template.data[Object.keys(template.data)[1]];
     let forms = formSettings[Object.keys(formSettings)[1]];
     if (forms === undefined) {
-        createFormTargets(formLookup, pokemonIdString + '_01').targets.push(pokemonIdString + '_00_female');
+        createFormTargets(formLookup, pokemonIdString + '_01').targets.push(
+            new PartialPokemonDisplay(pokemonId, POGOProtos.Enums.Gender.FEMALE));
         const formTargets = createFormTargets(formLookup, pokemonIdString + '_00');
-        formTargets.targets.push(pokemonIdString + '_00');
+        formTargets.targets.push(new PartialPokemonDisplay(pokemonId));
         formTargets.female = false;
         return;
     }
@@ -43,24 +78,23 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, sepa
             continue;
         }
         let assetBundleSuffix = formData[keys[1]] || 0;
-        if (defaultAssetBundleSuffix === assetBundleSuffix && separator === '_') {
+        if (defaultAssetBundleSuffix === assetBundleSuffix && field === 'form') {
             continue;   // we expect the client to fallback automatically
         }
-        let target;
-        if (defaultAssetBundleSuffix === undefined && separator === '_') {
+        const target = new PartialPokemonDisplay(pokemonId);
+        if (defaultAssetBundleSuffix === undefined && field === 'form') {
             // the game uses the first form for Pokedex images
             defaultAssetBundleSuffix = assetBundleSuffix;
-            target = pokemonIdString + '_00';
         } else {
-            target = pokemonIdString + separator + formId;
+            target[field] = formId;
         }
         if (Number.isInteger(assetBundleSuffix)) {  // is actually assetBundleValue
             if (assetBundleSuffix === 0) {
-                createFormTargets(formLookup, pokemonIdString + '_01').targets.push(target + '_female');
+                createFormTargets(formLookup, pokemonIdString + '_01').targets.push(changeGender(target));
             }
             assetBundleSuffix = pokemonIdString + '_' + String(assetBundleSuffix).padStart(2, '0');
         } else if (assetBundleSuffix.indexOf('_00_') >= 0) {
-            createFormTargets(formLookup, assetBundleSuffix.replace('_00_', '_01_')).targets.push(target + '_female');
+            createFormTargets(formLookup, assetBundleSuffix.replace('_00_', '_01_')).targets.push(changeGender(target));
         }
         const formTargets = createFormTargets(formLookup, assetBundleSuffix);
         formTargets.targets.push(target);
@@ -93,26 +127,26 @@ function convert(inDir, filename, targetPath) {
     console.log('Reading game master...');
     const formLookup = {
         '000': {    // substitute is not in gameMaster
-            targets: ['000']
+            targets: [new PartialPokemonDisplay(0)]
         },
         '018_51': {
-            targets: ['018_v' + POGOProtos.Enums.PokemonEvolution.EVOLUTION_MEGA],
+            targets: [new PartialPokemonDisplay(18, 0, 0, POGOProtos.Enums.PokemonEvolution.EVOLUTION_MEGA)],
             fallback: true
         },
         '077_31': {
-            targets: ['077_' + POGOProtos.Enums.Form.PONYTA_GALARIAN],
+            targets: [new PartialPokemonDisplay(77, 0, POGOProtos.Enums.Form.PONYTA_GALARIAN)],
             fallback: true
         },
         '078_31': {
-            targets: ['077_' + POGOProtos.Enums.Form.RAPIDASH_GALARIAN],
+            targets: [new PartialPokemonDisplay(78, 0, POGOProtos.Enums.Form.RAPIDASH_GALARIAN)],
             fallback: true
         },
         '079_31': {
-            targets: ['077_' + POGOProtos.Enums.Form.SLOWBRO_GALARIAN],
+            targets: [new PartialPokemonDisplay(79, 0, POGOProtos.Enums.Form.SLOWBRO_GALARIAN)],
             fallback: true
         },
         '493_00': { // 493_11 is missing
-            targets: ['493_00'],
+            targets: [new PartialPokemonDisplay(493)],
             fallback: true
         },
     };
@@ -134,7 +168,7 @@ function convert(inDir, filename, targetPath) {
                 extractFormTargets(formLookup, template, pokemonId, (evolution) => {
                     // <RANDOMIZED_NAME>_TEMP_EVOLUTION_<NAME> => EVOLUTION_<NAME>
                     return POGOProtos.Enums.PokemonEvolution[evolution.split('_TEMP_', 2)[1]];
-                }, '_v');
+                }, 'evolution');
             }
         }
     }
@@ -164,18 +198,22 @@ function convert(inDir, filename, targetPath) {
                 break;  // we can break since we have done the check
             }
         }
-        if (formTargets === null) {
+        let match = /(?:_(\d+))?(_shiny)?\.png/.exec(suffix);
+        if (formTargets === null || match === null) {
             console.warn('Unrecognized/unused asset', filename);
             continue;
         }
         formTargets.hit = true;
+        const costume = parseInt(match[1]) || 0;
+        const shiny = match[2] !== undefined;
         let output = null;
         for (const target of formTargets.targets) {
-            availablePokemon.push(target + suffix.replace(/\.png$/, ''));
+            const outputFilename = target.filename(costume, shiny);
+            availablePokemon.push(outputFilename);
             if (!outDir) {
                 continue;
             }
-            const targetPath = path.join(outDir, 'pokemon_icon_' + target + suffix);
+            const targetPath = path.join(outDir, outputFilename + '.png');
             if (output !== null) {
                 await fs.promises.copyFile(output, targetPath);
             } else if (convert(inDir, filename, targetPath)) {

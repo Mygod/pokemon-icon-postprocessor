@@ -1,14 +1,14 @@
 {
   "name": "pokemon-icon-postprocessor",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Mygod",
+  "license": "Apache-2.0",
   "dependencies": {
     "pogo-protos": "Furtif/pogo-protos",
     "pokemongo-game-master": "pokemongo-dev-contrib/pokemongo-game-master"
