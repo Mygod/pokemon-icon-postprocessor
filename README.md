@@ -48,7 +48,7 @@ const axios = require('axios')
 const { Sema } = require('async-sema')
 
 const sema = new Sema(1)
-let availablePokemon = {}
+const availablePokemon = {}
 
 function resolvePokemonIcon(availablePokemon, pokemonId, form = 0, evolution = 0, gender = 0, costume = 0,
                             shiny = false) {
