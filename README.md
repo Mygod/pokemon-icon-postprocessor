@@ -1,10 +1,12 @@
 # Pokemon Icon Postprocessor
 
-Batch renaming + trimming [`pokemon_icons`](https://github.com/ZeChrales/PogoAssets/tree/master/pokemon_icons) for easier access.
+Batch renaming + trimming [`pokemon_icon`s](https://github.com/PokeMiners/pogo_assets/tree/master/Images/Pokemon%20-%20256x256) for easier access.
 
 ## I am too lazy to run it myself
 
 Compiled icons available at: https://mygod.github.io/pokicons/v2
+
+Or to use specific commit: https://raw.githubusercontent.com/Mygod/pokicons/4c6d31e2fabfb603dad70c3d38d814e85b9b9d13/v2
 
 Source: https://github.com/Mygod/pokicons
 
