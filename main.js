@@ -2,8 +2,8 @@ const child_process = require("child_process");
 const fs = require('fs');
 const path = require('path');
 
+const axios = require('axios');
 const POGOProtos = require('pogo-protos');
-const gameMaster = require('pokemongo-game-master');
 
 class PartialPokemonDisplay {
     // costume and shiny will not appear in gamemaster
@@ -146,9 +146,10 @@ function convert(inDir, filename, targetPath) {
             fallback: true
         },
     };
-    const gameMasterContent = await gameMaster.getVersion('latest', 'json');
+    const response = await axios.get('https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json');
+    const gameMaster = response.data;
     const availablePokemon = [];
-    for (const template of gameMasterContent.template) {
+    for (const template of gameMaster) {
         if (template.templateId.startsWith('FORMS_V')) {
             const pokemonId = parseInt(template.templateId.substr(7, 4));
             if (!pokemonId) {
@@ -162,8 +163,7 @@ function convert(inDir, filename, targetPath) {
                 console.warn('Unrecognized templateId', template.templateId);
             } else {
                 extractFormTargets(formLookup, template, pokemonId, (evolution) => {
-                    // <RANDOMIZED_NAME>_TEMP_EVOLUTION_<NAME> => EVOLUTION_<NAME>
-                    return POGOProtos.Enums.PokemonEvolution[evolution.split('_TEMP_', 2)[1]];
+                    return POGOProtos.Enums.PokemonEvolution[evolution.split('TEMP_', 2)[1]];
                 }, 'evolution');
             }
         }

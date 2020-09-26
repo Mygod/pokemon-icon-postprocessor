@@ -10,7 +10,7 @@
   "author": "Mygod",
   "license": "Apache-2.0",
   "dependencies": {
-    "pogo-protos": "Furtif/pogo-protos",
-    "pokemongo-game-master": "pokemongo-dev-contrib/pokemongo-game-master"
+    "axios": "^0.20.0",
+    "pogo-protos": "Furtif/pogo-protos"
   }
 }
