@@ -129,10 +129,6 @@ function convert(inDir, filename, targetPath) {
         '000': {    // substitute is not in gameMaster
             targets: [new PartialPokemonDisplay(0)]
         },
-        '018_51': {
-            targets: [new PartialPokemonDisplay(18, 0, 0, POGOProtos.Enums.PokemonEvolution.EVOLUTION_MEGA)],
-            fallback: true
-        },
         '077_31': {
             targets: [new PartialPokemonDisplay(77, 0, POGOProtos.Enums.Form.PONYTA_GALARIAN)],
             fallback: true
