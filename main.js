@@ -3,13 +3,6 @@ const fs = require('fs');
 const path = require('path');
 
 const axios = require('axios');
-const protobuf = require("protobufjs");
-
-const protoCommit = '1a72cb1';
-const PokemonDisplayProto = 'AGGOOMAFBOB';
-const Form = 'MFMNHPKEEBI';
-const Gender = 'BDIFPOKFDJC';
-const PokemonEvolution = 'BAMGCCJEBDF';
 let rpc;
 
 class PartialPokemonDisplay {
@@ -42,7 +35,7 @@ class PartialPokemonDisplay {
     }
 }
 
-function changeGender(other, gender = rpc[PokemonDisplayProto][Gender].FEMALE) {
+function changeGender(other, gender = rpc.PokemonDisplayProto.Gender.FEMALE) {
     return new PartialPokemonDisplay(other.pokemonId, gender, other.form, other.evolution);
 }
 
@@ -69,7 +62,7 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, fiel
     let forms = formSettings[Object.keys(formSettings)[1]];
     if (forms === undefined) {
         createFormTargets(formLookup, pokemonIdString + '_01').targets.push(
-            new PartialPokemonDisplay(pokemonId, rpc[PokemonDisplayProto][Gender].FEMALE));
+            new PartialPokemonDisplay(pokemonId, rpc.PokemonDisplayProto.Gender.FEMALE));
         const formTargets = createFormTargets(formLookup, pokemonIdString + '_00');
         formTargets.targets.push(new PartialPokemonDisplay(pokemonId));
         formTargets.female = false;
@@ -131,9 +124,8 @@ function convert(inDir, filename, targetPath) {
     inDir = path.resolve(inDir);
     outDir = outDir && path.resolve(outDir);
 
-    console.log(`Reading ${protoCommit} protos...`);
-    const proto = await axios.get(`https://raw.githubusercontent.com/Furtif/POGOProtos/${protoCommit}/src/POGOProtos/Rpc/Rpc.proto`);
-    rpc = protobuf.parse(proto.data).root.POGOProtos.Rpc;
+    console.log('Reading latest protos...');
+    rpc = await require('purified-protos')();
 
     console.log('Reading game master...');
     const formLookup = {
@@ -141,19 +133,19 @@ function convert(inDir, filename, targetPath) {
             targets: [new PartialPokemonDisplay(0)]
         },
         '079_31': {
-            targets: [new PartialPokemonDisplay(79, 0, rpc[PokemonDisplayProto][Form].SLOWBRO_GALARIAN)],
+            targets: [new PartialPokemonDisplay(79, 0, rpc.PokemonDisplayProto.Form.SLOWBRO_GALARIAN)],
             fallback: true
         },
         '094_26': {
-            targets: [new PartialPokemonDisplay(94, 0, rpc[PokemonDisplayProto][Form].GENGAR_COSTUME_2020)],
+            targets: [new PartialPokemonDisplay(94, 0, rpc.PokemonDisplayProto.Form.GENGAR_COSTUME_2020)],
             fallback: true
         },
         '094_51': {
-            targets: [new PartialPokemonDisplay(94, 0, 0, rpc[PokemonEvolution][PokemonEvolution.replace(/./g, '$&_') + 'TEMP_EVOLUTION_MEGA'])],
+            targets: [new PartialPokemonDisplay(94, 0, 0, rpc.TempEvolution.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         'pm0302_00_pgo_fall2020': {
-            targets: [new PartialPokemonDisplay(302, 0, rpc[PokemonDisplayProto][Form].SABLEYE_COSTUME_2020)],
+            targets: [new PartialPokemonDisplay(302, 0, rpc.PokemonDisplayProto.Form.SABLEYE_COSTUME_2020)],
             fallback: true
         },
         '493_00': { // 493_11 is missing
@@ -169,7 +161,7 @@ function convert(inDir, filename, targetPath) {
             if (!pokemonId) {
                 console.warn('Unrecognized templateId', template.templateId);
             } else {
-                extractFormTargets(formLookup, template, pokemonId, (form) => rpc[PokemonDisplayProto][Form][form]);
+                extractFormTargets(formLookup, template, pokemonId, (form) => rpc.PokemonDisplayProto.Form[form]);
             }
         } else if (template.templateId.startsWith('TEMPORARY_EVOLUTION_V')) {
             const pokemonId = parseInt(template.templateId.substr(21, 4));
@@ -177,7 +169,7 @@ function convert(inDir, filename, targetPath) {
                 console.warn('Unrecognized templateId', template.templateId);
             } else {
                 extractFormTargets(formLookup, template, pokemonId, (evolution) => {
-                    return rpc[PokemonEvolution][PokemonEvolution.replace(/./g, '$&_') + evolution];
+                    return rpc.TempEvolution[evolution];
                 }, 'evolution');
             }
         }
