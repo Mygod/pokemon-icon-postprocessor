@@ -149,7 +149,7 @@ function convert(inDir, filename, targetPath) {
             fallback: true
         },
         '094_51': {
-            targets: [new PartialPokemonDisplay(94, 0, 0, rpc[PokemonEvolution].TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(94, 0, 0, rpc[PokemonEvolution][PokemonEvolution.replace(/./g, '$&_') + 'TEMP_EVOLUTION_MEGA'])],
             fallback: true
         },
         'pm0302_00_pgo_fall2020': {
