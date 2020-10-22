@@ -11,6 +11,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "axios": "^0.20.0",
-    "pogo-protos": "Furtif/pogo-protos"
+    "protobufjs": "^6.10.1"
   }
 }
