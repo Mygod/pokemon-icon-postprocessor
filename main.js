@@ -136,18 +136,6 @@ function convert(inDir, filename, targetPath) {
             targets: [new PartialPokemonDisplay(79, 0, rpc.PokemonDisplayProto.Form.SLOWBRO_GALARIAN)],
             fallback: true
         },
-        '094_26': {
-            targets: [new PartialPokemonDisplay(94, 0, rpc.PokemonDisplayProto.Form.GENGAR_COSTUME_2020)],
-            fallback: true
-        },
-        '094_51': {
-            targets: [new PartialPokemonDisplay(94, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
-        'pm0302_00_pgo_fall2020': {
-            targets: [new PartialPokemonDisplay(302, 0, rpc.PokemonDisplayProto.Form.SABLEYE_COSTUME_2020)],
-            fallback: true
-        },
         '493_00': { // 493_11 is missing
             targets: [new PartialPokemonDisplay(493)],
             fallback: true
