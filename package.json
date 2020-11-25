@@ -11,6 +11,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "axios": "^0.20.0",
-    "purified-protos": "^0.189.0"
+    "purified-protos": "^0.193.2"
   }
 }

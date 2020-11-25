@@ -141,7 +141,7 @@ function convert(inDir, filename, targetPath) {
             fallback: true
         },
         '094_51': {
-            targets: [new PartialPokemonDisplay(94, 0, 0, rpc.TempEvolution.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(94, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         'pm0302_00_pgo_fall2020': {
@@ -169,7 +169,7 @@ function convert(inDir, filename, targetPath) {
                 console.warn('Unrecognized templateId', template.templateId);
             } else {
                 extractFormTargets(formLookup, template, pokemonId, (evolution) => {
-                    return rpc.TempEvolution[evolution];
+                    return rpc.HoloTemporaryEvolutionId[evolution];
                 }, 'evolution');
             }
         }
