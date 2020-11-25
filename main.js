@@ -1,6 +1,7 @@
 const child_process = require("child_process");
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 
 const axios = require('axios');
 let rpc;
@@ -32,6 +33,10 @@ class PartialPokemonDisplay {
             result += '-shiny';
         }
         return result;
+    }
+
+    [util.inspect.custom](depth, opts) {
+        return this.filename();
     }
 }
 
