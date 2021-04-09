@@ -137,8 +137,52 @@ function convert(inDir, filename, targetPath) {
         '000': {    // substitute is not in gameMaster
             targets: [new PartialPokemonDisplay(0)]
         },
+        '065_51': {
+            targets: [new PartialPokemonDisplay(65, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            fallback: true
+        },
         '079_31': {
             targets: [new PartialPokemonDisplay(79, 0, rpc.PokemonDisplayProto.Form.SLOWBRO_GALARIAN)],
+            fallback: true
+        },
+        '115_51': {
+            targets: [new PartialPokemonDisplay(115, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            fallback: true
+        },
+        '127_51': {
+            targets: [new PartialPokemonDisplay(127, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            fallback: true
+        },
+        '142_51': {
+            targets: [new PartialPokemonDisplay(142, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            fallback: true
+        },
+        '150_51': {
+            targets: [new PartialPokemonDisplay(150, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_X)],
+            fallback: true
+        },
+        '150_52': {
+            targets: [new PartialPokemonDisplay(150, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_Y)],
+            fallback: true
+        },
+        '302_51': {
+            targets: [new PartialPokemonDisplay(302, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            fallback: true
+        },
+        '303_51': {
+            targets: [new PartialPokemonDisplay(303, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            fallback: true
+        },
+        '319_51': {
+            targets: [new PartialPokemonDisplay(319, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            fallback: true
+        },
+        '354_51': {
+            targets: [new PartialPokemonDisplay(354, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            fallback: true
+        },
+        '384_51': {
+            targets: [new PartialPokemonDisplay(384, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '493_00': { // 493_11 is missing
