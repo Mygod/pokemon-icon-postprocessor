@@ -223,6 +223,7 @@ function convert(inDir, filename, targetPath) {
     if (outDir) {
         await fs.promises.mkdir(outDir, { recursive: true });
     }
+    let xerneasFixed = true;
     for (const filename of await fs.promises.readdir(inDir)) {
         if (!filename.startsWith('pokemon_icon_')) {
             continue;
@@ -238,15 +239,25 @@ function convert(inDir, filename, targetPath) {
             }
         }
         let match;
-        if (formTargets === null || (match = /^(?:_(\d+))?(_shiny)?\.png$/.exec(suffix)) === null) {
+        if (formTargets === null || (match = /^(?:_(\d+))?(_shiny)?(_old[12]?)?\.png$/.exec(suffix)) === null) {
             console.warn('Unrecognized/unused asset', filename);
             continue;
         }
+        let targets = formTargets.targets;
         formTargets.hit = true;
+        if (match[3] !== undefined) {
+            if (targets[0].pokemonId !== 716) {
+                console.warn('Unrecognized old asset', filename);
+                continue;
+            }
+            xerneasFixed = false;
+            if (match[3].endsWith('2')) continue;   // the weird colorless active mode shiny
+            targets = [new PartialPokemonDisplay(716, 0, rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE)];
+        }
         const costume = parseInt(match[1]) || 0;
         const shiny = match[2] !== undefined;
         let output = null;
-        for (const target of formTargets.targets) {
+        for (const target of targets) {
             const outputFilename = target.filename(costume, shiny);
             availablePokemon.push(outputFilename);
             if (!outDir) {
@@ -260,6 +271,7 @@ function convert(inDir, filename, targetPath) {
             }
         }
     }
+    if (xerneasFixed) console.warn('Workaround for Xerneas active form could be removed now');
     if (outDir) {
         await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(availablePokemon));
     }
