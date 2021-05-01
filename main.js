@@ -238,7 +238,7 @@ function convert(inDir, filename, targetPath) {
             }
         }
         let match;
-        if (formTargets === null || (match = /(?:_(\d+))?(_shiny)?\.png/.exec(suffix)) === null) {
+        if (formTargets === null || (match = /^(?:_(\d+))?(_shiny)?\.png$/.exec(suffix)) === null) {
             console.warn('Unrecognized/unused asset', filename);
             continue;
         }
