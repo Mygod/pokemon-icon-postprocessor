@@ -237,8 +237,8 @@ function convert(inDir, filename, targetPath) {
                 break;  // we can break since we have done the check
             }
         }
-        let match = /(?:_(\d+))?(_shiny)?\.png/.exec(suffix);
-        if (formTargets === null || match === null) {
+        let match;
+        if (formTargets === null || (match = /(?:_(\d+))?(_shiny)?\.png/.exec(suffix)) === null) {
             console.warn('Unrecognized/unused asset', filename);
             continue;
         }
