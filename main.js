@@ -4,7 +4,7 @@ const path = require('path');
 const util = require('util');
 
 const axios = require('axios');
-let rpc;
+const POGOProtos = require('pogo-protos');
 
 class PartialPokemonDisplay {
     // costume and shiny will not appear in gamemaster
@@ -40,7 +40,7 @@ class PartialPokemonDisplay {
     }
 }
 
-function changeGender(other, gender = rpc.PokemonDisplayProto.Gender.FEMALE) {
+function changeGender(other, gender = POGOProtos.Rpc.PokemonDisplayProto.Gender.FEMALE) {
     return new PartialPokemonDisplay(other.pokemonId, gender, other.form, other.evolution);
 }
 
@@ -67,7 +67,7 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, fiel
     let forms = formSettings[Object.keys(formSettings)[1]];
     if (forms === undefined) {
         createFormTargets(formLookup, pokemonIdString + '_01').targets.push(
-            new PartialPokemonDisplay(pokemonId, rpc.PokemonDisplayProto.Gender.FEMALE));
+            new PartialPokemonDisplay(pokemonId, POGOProtos.Rpc.PokemonDisplayProto.Gender.FEMALE));
         const formTargets = createFormTargets(formLookup, pokemonIdString + '_00');
         formTargets.targets.push(new PartialPokemonDisplay(pokemonId));
         formTargets.female = false;
@@ -129,56 +129,53 @@ function convert(inDir, filename, targetPath) {
     inDir = path.resolve(inDir);
     outDir = outDir && path.resolve(outDir);
 
-    console.log('Reading latest protos...');
-    rpc = await require('purified-protos')();
-
     console.log('Reading game master...');
     const formLookup = {
         '000': {    // substitute is not in gameMaster
             targets: [new PartialPokemonDisplay(0)]
         },
         '065_51': {
-            targets: [new PartialPokemonDisplay(65, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(65, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '115_51': {
-            targets: [new PartialPokemonDisplay(115, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(115, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '127_51': {
-            targets: [new PartialPokemonDisplay(127, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(127, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '142_51': {
-            targets: [new PartialPokemonDisplay(142, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(142, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '150_51': {
-            targets: [new PartialPokemonDisplay(150, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_X)],
+            targets: [new PartialPokemonDisplay(150, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_X)],
             fallback: true
         },
         '150_52': {
-            targets: [new PartialPokemonDisplay(150, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_Y)],
+            targets: [new PartialPokemonDisplay(150, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_Y)],
             fallback: true
         },
         '302_51': {
-            targets: [new PartialPokemonDisplay(302, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(302, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '303_51': {
-            targets: [new PartialPokemonDisplay(303, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(303, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '319_51': {
-            targets: [new PartialPokemonDisplay(319, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(319, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '354_51': {
-            targets: [new PartialPokemonDisplay(354, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(354, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '384_51': {
-            targets: [new PartialPokemonDisplay(384, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
+            targets: [new PartialPokemonDisplay(384, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '493_00': { // 493_11 is missing
@@ -194,7 +191,7 @@ function convert(inDir, filename, targetPath) {
             if (!pokemonId) {
                 console.warn('Unrecognized templateId', template.templateId);
             } else {
-                extractFormTargets(formLookup, template, pokemonId, (form) => rpc.PokemonDisplayProto.Form[form]);
+                extractFormTargets(formLookup, template, pokemonId, (form) => POGOProtos.Rpc.PokemonDisplayProto.Form[form]);
             }
         } else if (template.templateId.startsWith('TEMPORARY_EVOLUTION_V')) {
             const pokemonId = parseInt(template.templateId.substr(21, 4));
@@ -202,7 +199,7 @@ function convert(inDir, filename, targetPath) {
                 console.warn('Unrecognized templateId', template.templateId);
             } else {
                 extractFormTargets(formLookup, template, pokemonId, (evolution) => {
-                    return rpc.HoloTemporaryEvolutionId[evolution];
+                    return POGOProtos.Rpc.HoloTemporaryEvolutionId[evolution];
                 }, 'evolution');
             }
         }
@@ -248,7 +245,7 @@ function convert(inDir, filename, targetPath) {
             }
             xerneasFixed = false;
             if (match[3].endsWith('2')) continue;   // the weird colorless active mode shiny
-            targets = [new PartialPokemonDisplay(716, 0, rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE)];
+            targets = [new PartialPokemonDisplay(716, 0, POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE)];
         }
         const costume = parseInt(match[1]) || 0;
         const shiny = match[2] !== undefined;
