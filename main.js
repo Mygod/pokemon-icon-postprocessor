@@ -141,10 +141,6 @@ function convert(inDir, filename, targetPath) {
             targets: [new PartialPokemonDisplay(65, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
-        '079_31': {
-            targets: [new PartialPokemonDisplay(79, 0, rpc.PokemonDisplayProto.Form.SLOWBRO_GALARIAN)],
-            fallback: true
-        },
         '115_51': {
             targets: [new PartialPokemonDisplay(115, 0, 0, rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
