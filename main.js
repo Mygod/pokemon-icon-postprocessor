@@ -22,6 +22,8 @@ class PartialPokemonDisplay {
         }
         if (this.form) {
             result += '-f' + this.form;
+            if (this.evolution) console.warn(
+                'Found entry with both evolution and form set. This would not be compatible with addressable assets.');
         }
         if (costume) {
             result += '-c' + costume;
@@ -218,9 +220,7 @@ function convert(inDir, filename, targetPath) {
     }
     let xerneasFixed = true;
     for (const filename of await fs.promises.readdir(inDir)) {
-        if (!filename.startsWith('pokemon_icon_')) {
-            continue;
-        }
+        if (!filename.endsWith('.png')) continue;
         const name = filename.substr(13);
         let suffix;
         let formTargets = null;
@@ -264,6 +264,44 @@ function convert(inDir, filename, targetPath) {
             }
         }
     }
+
+    const addressableAssetsRegex = /^pm(\d+)(?:\.f([^.]+))?(?:\.c([^.]+))?(?:\.g(\d+))?(\.s)?\.icon\.png$/;
+    const addressableAssetsDir = path.join(inDir, 'Addressable Assets');
+    const overridenFiles = [];
+    for (const filename of await fs.promises.readdir(addressableAssetsDir)) {
+        if (!filename.endsWith('.png')) continue;
+        const match = addressableAssetsRegex.exec(filename);
+        if (match === null) {
+            console.warn('Unrecognized addressable asset', filename);
+            continue;
+        }
+        const display = new PartialPokemonDisplay(parseInt(match[1]));
+        if (match[2] !== undefined) {
+            let test = POGOProtos.Rpc.HoloTemporaryEvolutionId['TEMP_EVOLUTION_' + match[2]];
+            if (test) display.evolution = test; else {
+                test = POGOProtos.Rpc.PokemonDisplayProto.Form[
+                    POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_' + match[2]];
+                if (test) display.form = test; else {
+                    console.warn('Unrecognized form/evolution', filename);
+                    continue;
+                }
+            }
+        }
+        let costume = 0;
+        if (match[3] !== undefined) {
+            const test = POGOProtos.Rpc.PokemonDisplayProto.Costume[match[3]];
+            if (test) costume = test; else {
+                console.warn('Unrecognized costume', filename);
+                continue;
+            }
+        }
+        if (match[4] !== undefined) display.gender = parseInt(match[4]);
+        const outputFilename = display.filename(costume, match[5] !== undefined);
+        if (availablePokemon.indexOf(outputFilename) >= 0) overridenFiles.push(outputFilename);
+        else availablePokemon.push(outputFilename);
+        if (outDir) convert(addressableAssetsDir, filename, path.join(outDir, outputFilename + '.png'));
+    }
+
     if (xerneasFixed) console.warn('Workaround for Xerneas active form could be removed now');
     if (outDir) {
         await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(availablePokemon));
@@ -282,4 +320,5 @@ function convert(inDir, filename, targetPath) {
     if (arceusFixed) {
         console.warn('Asset for Arceus normal form has been added');
     }
+    if (overridenFiles.length) console.info(overridenFiles.length, 'addressable assets overriding base file');
 })();
