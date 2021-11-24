@@ -308,11 +308,12 @@ function convert(inDir, filename, targetPath) {
     }
 
     let arceusFixed = true;
+    const pokemonIndex = new Set(availablePokemon);
     for (const [suffix, data] of Object.entries(formLookup)) {
         if (!data.hit && !data.female) {
             if (suffix === '493_11') {
                 arceusFixed = false;
-            } else {
+            } else if (data.targets.some(target => !pokemonIndex.has(target.filename()))) {
                 console.warn('Found form/temporary evolution with no matching assets', suffix, data);
             }
         }
@@ -321,4 +322,5 @@ function convert(inDir, filename, targetPath) {
         console.warn('Asset for Arceus normal form has been added');
     }
     if (overridenFiles.length) console.info(overridenFiles.length, 'addressable assets overriding base file');
+    if (!outDir) console.log(JSON.stringify(availablePokemon));
 })();
