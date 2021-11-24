@@ -96,7 +96,7 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, fiel
             target[field] = formId;
         }
         if (Number.isInteger(assetBundleSuffix)) {  // is actually assetBundleValue
-            if (assetBundleSuffix === 0 && ![592, 593, 668, 678, 720].includes(pokemonId)) {
+            if (assetBundleSuffix === 0 && ![592, 593, 668, 678, 710, 711, 720].includes(pokemonId)) {
                 createFormTargets(formLookup, pokemonIdString + '_01').targets.push(changeGender(target));
             }
             assetBundleSuffix = pokemonIdString + '_' + String(assetBundleSuffix).padStart(2, '0');
