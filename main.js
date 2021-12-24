@@ -148,10 +148,6 @@ function convert(inDir, filename, targetPath) {
             targets: [new PartialPokemonDisplay(127, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
-        '142_51': {
-            targets: [new PartialPokemonDisplay(142, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
         '150_51': {
             targets: [new PartialPokemonDisplay(150, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_X)],
             fallback: true
