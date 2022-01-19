@@ -77,14 +77,13 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, fiel
     }
     let defaultAssetBundleSuffix = undefined;
     for (const formData of forms) {
-        const keys = Object.keys(formData);
-        const form = formData[keys[0]];
+        const form = formData[Object.keys(formData)[0]];
         const formId = computeSuffix(form);
         if (!formId) {
-            console.warn('Unrecognized form/temp evolution', form);
+            console.warn('Unrecognized', field, form);
             continue;
         }
-        let assetBundleSuffix = formData[keys[1]] || 0;
+        let assetBundleSuffix = formData.assetBundleSuffix || formData.assetBundleValue || 0;
         if (defaultAssetBundleSuffix === assetBundleSuffix && field === 'form') {
             continue;   // we expect the client to fallback automatically
         }
