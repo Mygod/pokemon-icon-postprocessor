@@ -77,7 +77,9 @@ function extractFormTargets(formLookup, template, pokemonId, computeSuffix, fiel
     }
     let defaultAssetBundleSuffix = undefined;
     for (const formData of forms) {
-        const form = formData[Object.keys(formData)[0]];
+        const keys = Object.keys(formData);
+        if (keys.length === 0) continue;
+        const form = formData[keys[0]];
         const formId = computeSuffix(form);
         if (!formId) {
             console.warn('Unrecognized', field, form);
