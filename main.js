@@ -262,7 +262,7 @@ function convert(inDir, filename, targetPath) {
         }
     }
 
-    const addressableAssetsRegex = /^pm(\d+)(?:\.f([^.]+))?(?:\.c([^.]+))?(?:\.g(\d+))?(\.s)?\.icon\.png$/;
+    const addressableAssetsRegex = /^pm(\d+)(?:\.f([^.]*))?(?:\.c([^.]+))?(?:\.g(\d+))?(\.s)?\.icon\.png$/;
     const addressableAssetsDir = path.join(inDir, 'Addressable Assets');
     const overridenFiles = [];
     for (const filename of await fs.promises.readdir(addressableAssetsDir)) {
@@ -273,17 +273,26 @@ function convert(inDir, filename, targetPath) {
             continue;
         }
         const display = new PartialPokemonDisplay(parseInt(match[1]));
-        if (match[2] !== undefined) {
-            let test = POGOProtos.Rpc.HoloTemporaryEvolutionId['TEMP_EVOLUTION_' + match[2]];
-            if (test) display.evolution = test; else {
-                test = POGOProtos.Rpc.PokemonDisplayProto.Form[
-                    POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_' + match[2]];
-                if (test) display.form = test; else {
-                    console.warn('Unrecognized form/evolution', filename);
-                    continue;
-                }
+        if (match[2] !== undefined && ((f) => {
+            if (f === '') return !(display.form = POGOProtos.Rpc.PokemonDisplayProto.Form[
+                POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_NORMAL']);
+            let test;
+            if ((test = POGOProtos.Rpc.HoloTemporaryEvolutionId['TEMP_EVOLUTION_' + f])) {
+                display.evolution = test;
+                return false;
             }
-        }
+            if ((test = POGOProtos.Rpc.PokemonDisplayProto.Form[
+                    POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_' + f])) {
+                display.form = test;
+                return false;
+            }
+            if ((test = POGOProtos.Rpc.PokemonDisplayProto.Form[f])) {
+                display.form = test;
+                return false;
+            }
+            console.warn('Unrecognized form/evolution', filename);
+            return true;
+        })(match[2])) continue;
         let costume = 0;
         if (match[3] !== undefined) {
             const test = POGOProtos.Rpc.PokemonDisplayProto.Costume[match[3]];
