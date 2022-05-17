@@ -215,7 +215,54 @@ function convert(inDir, filename, targetPath) {
     if (outDir) {
         await fs.promises.mkdir(outDir, { recursive: true });
     }
+
+    const addressableAssetsRegex = /^pm(\d+)(?:\.f([^.]*))?(?:\.c([^.]+))?(?:\.g(\d+))?(\.s)?\.icon\.png$/;
+    const addressableAssetsDir = path.join(inDir, 'Addressable Assets');
+    for (const filename of await fs.promises.readdir(addressableAssetsDir)) {
+        if (!filename.endsWith('.png')) continue;
+        const match = addressableAssetsRegex.exec(filename);
+        if (match === null) {
+            console.warn('Unrecognized addressable asset', filename);
+            continue;
+        }
+        const display = new PartialPokemonDisplay(parseInt(match[1]));
+        if (match[2] !== undefined && ((f) => {
+            if (f === '') return !(display.form = POGOProtos.Rpc.PokemonDisplayProto.Form[
+            POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_NORMAL']);
+            let test;
+            if ((test = POGOProtos.Rpc.HoloTemporaryEvolutionId['TEMP_EVOLUTION_' + f])) {
+                display.evolution = test;
+                return false;
+            }
+            if ((test = POGOProtos.Rpc.PokemonDisplayProto.Form[
+            POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_' + f])) {
+                display.form = test;
+                return false;
+            }
+            if ((test = POGOProtos.Rpc.PokemonDisplayProto.Form[f])) {
+                display.form = test;
+                return false;
+            }
+            console.warn('Unrecognized form/evolution', filename);
+            return true;
+        })(match[2])) continue;
+        let costume = 0;
+        if (match[3] !== undefined) {
+            const test = POGOProtos.Rpc.PokemonDisplayProto.Costume[match[3]];
+            if (test) costume = test; else {
+                console.warn('Unrecognized costume', filename);
+                continue;
+            }
+        }
+        if (match[4] !== undefined) display.gender = parseInt(match[4]);
+        const outputFilename = display.filename(costume, match[5] !== undefined);
+        availablePokemon.push(outputFilename);
+        if (outDir) convert(addressableAssetsDir, filename, path.join(outDir, outputFilename + '.png'));
+    }
+
     let xerneasFixed = true;
+    const aaFiles = new Set(availablePokemon);
+    const missingAa = [];
     for (const filename of await fs.promises.readdir(inDir)) {
         if (!filename.endsWith('.png')) continue;
         const name = filename.substr(13);
@@ -249,10 +296,10 @@ function convert(inDir, filename, targetPath) {
         let output = null;
         for (const target of targets) {
             const outputFilename = target.filename(costume, shiny);
+            if (aaFiles.has(outputFilename)) continue;
+            missingAa.push(outputFilename);
             availablePokemon.push(outputFilename);
-            if (!outDir) {
-                continue;
-            }
+            if (!outDir) continue;
             const targetPath = path.join(outDir, outputFilename + '.png');
             if (output !== null) {
                 await fs.promises.copyFile(output, targetPath);
@@ -260,52 +307,6 @@ function convert(inDir, filename, targetPath) {
                 output = targetPath;
             }
         }
-    }
-
-    const addressableAssetsRegex = /^pm(\d+)(?:\.f([^.]*))?(?:\.c([^.]+))?(?:\.g(\d+))?(\.s)?\.icon\.png$/;
-    const addressableAssetsDir = path.join(inDir, 'Addressable Assets');
-    const overridenFiles = [];
-    for (const filename of await fs.promises.readdir(addressableAssetsDir)) {
-        if (!filename.endsWith('.png')) continue;
-        const match = addressableAssetsRegex.exec(filename);
-        if (match === null) {
-            console.warn('Unrecognized addressable asset', filename);
-            continue;
-        }
-        const display = new PartialPokemonDisplay(parseInt(match[1]));
-        if (match[2] !== undefined && ((f) => {
-            if (f === '') return !(display.form = POGOProtos.Rpc.PokemonDisplayProto.Form[
-                POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_NORMAL']);
-            let test;
-            if ((test = POGOProtos.Rpc.HoloTemporaryEvolutionId['TEMP_EVOLUTION_' + f])) {
-                display.evolution = test;
-                return false;
-            }
-            if ((test = POGOProtos.Rpc.PokemonDisplayProto.Form[
-                    POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_' + f])) {
-                display.form = test;
-                return false;
-            }
-            if ((test = POGOProtos.Rpc.PokemonDisplayProto.Form[f])) {
-                display.form = test;
-                return false;
-            }
-            console.warn('Unrecognized form/evolution', filename);
-            return true;
-        })(match[2])) continue;
-        let costume = 0;
-        if (match[3] !== undefined) {
-            const test = POGOProtos.Rpc.PokemonDisplayProto.Costume[match[3]];
-            if (test) costume = test; else {
-                console.warn('Unrecognized costume', filename);
-                continue;
-            }
-        }
-        if (match[4] !== undefined) display.gender = parseInt(match[4]);
-        const outputFilename = display.filename(costume, match[5] !== undefined);
-        if (availablePokemon.indexOf(outputFilename) >= 0) overridenFiles.push(outputFilename);
-        else availablePokemon.push(outputFilename);
-        if (outDir) convert(addressableAssetsDir, filename, path.join(outDir, outputFilename + '.png'));
     }
 
     if (xerneasFixed) console.warn('Workaround for Xerneas active form could be removed now');
@@ -327,6 +328,8 @@ function convert(inDir, filename, targetPath) {
     if (arceusFixed) {
         console.warn('Asset for Arceus normal form has been added');
     }
-    if (overridenFiles.length) console.info(overridenFiles.length, 'addressable assets overriding base file');
+    if (missingAa.length) {
+        console.info(missingAa.length, 'assets have not migrated to addressable asset:', JSON.stringify(missingAa));
+    }
     if (!outDir) console.log(JSON.stringify(availablePokemon));
 })();
