@@ -137,14 +137,6 @@ function convert(inDir, filename, targetPath) {
         '000': {    // substitute is not in gameMaster
             targets: [new PartialPokemonDisplay(0)]
         },
-        '065_51': {
-            targets: [new PartialPokemonDisplay(65, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
-        '115_51': {
-            targets: [new PartialPokemonDisplay(115, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
         '127_51': {
             targets: [new PartialPokemonDisplay(127, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
@@ -167,10 +159,6 @@ function convert(inDir, filename, targetPath) {
         },
         '319_51': {
             targets: [new PartialPokemonDisplay(319, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
-        '354_51': {
-            targets: [new PartialPokemonDisplay(354, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '384_51': {
