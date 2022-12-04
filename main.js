@@ -52,15 +52,10 @@ function createFormTargets(formLookup, suffix) {
         console.warn('Found', suffix, 'in the gamemaster. Fallback rule will be deactivated.')
         formTargets = undefined;
     }
-    if (formTargets === undefined) {
-        return formLookup[suffix] = {
-            targets: [],
-            female: true
-        };
-    } else {
-        console.warn('Multiple targets found for asset', suffix);
-        return formTargets;
-    }
+    return formTargets === undefined ? (formLookup[suffix] = {
+        targets: [],
+        female: true
+    }) : formTargets;
 }
 
 function extractFormTargets(formLookup, template, pokemonId, computeSuffix, field = 'form') {
@@ -269,6 +264,7 @@ function convert(inDir, filename, targetPath) {
             continue;
         }
         let targets = formTargets.targets;
+        if (targets.length > 1) console.warn('Multiple targets found for asset', filename, targets);
         formTargets.hit = true;
         if (match[3] !== undefined) {
             if (targets[0].pokemonId !== 716) {
