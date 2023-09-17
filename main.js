@@ -221,8 +221,10 @@ function convert(inDir, filename, targetPath) {
         if (match[3] !== undefined) {
             const c = match[3].toUpperCase();
             let test = POGOProtos.Rpc.PokemonDisplayProto.Costume[c];
-            if (test) costume = test;
-            else if ((test = POGOProtos.Rpc.PokemonDisplayProto.Costume[c + '_NOEVOLVE'])) costume = test; else {
+            if (test) costume = test; else if ((test = POGOProtos.Rpc.PokemonDisplayProto.Costume[c + '_NOEVOLVE'])) {
+                console.warn('Unrecognized costume', filename, 'but found the noevolve costume');
+                costume = test;
+            } else {
                 console.warn('Unrecognized costume', filename);
                 continue;
             }
