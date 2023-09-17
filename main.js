@@ -4,7 +4,7 @@ const path = require('path');
 const util = require('util');
 
 const axios = require('axios');
-const POGOProtos = require('pogo-protos');
+const POGOProtos = require('@na-ji/pogo-protos');
 
 class PartialPokemonDisplay {
     // costume and shiny will not appear in gamemaster
@@ -132,10 +132,6 @@ function convert(inDir, filename, targetPath) {
         '000': {    // substitute is not in gameMaster
             targets: [new PartialPokemonDisplay(0)]
         },
-        '127_51': {
-            targets: [new PartialPokemonDisplay(127, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
         '150_51': {
             targets: [new PartialPokemonDisplay(150, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_X)],
             fallback: true
@@ -144,20 +140,12 @@ function convert(inDir, filename, targetPath) {
             targets: [new PartialPokemonDisplay(150, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_Y)],
             fallback: true
         },
-        '302_51': {
-            targets: [new PartialPokemonDisplay(302, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
         '303_51': {
             targets: [new PartialPokemonDisplay(303, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '319_51': {
             targets: [new PartialPokemonDisplay(319, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
-        '384_51': {
-            targets: [new PartialPokemonDisplay(384, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
             fallback: true
         },
         '493_00': { // 493_11 is missing
@@ -231,8 +219,10 @@ function convert(inDir, filename, targetPath) {
         })(match[2])) continue;
         let costume = 0;
         if (match[3] !== undefined) {
-            const test = POGOProtos.Rpc.PokemonDisplayProto.Costume[match[3]];
-            if (test) costume = test; else {
+            const c = match[3].toUpperCase();
+            let test = POGOProtos.Rpc.PokemonDisplayProto.Costume[c];
+            if (test) costume = test;
+            else if ((test = POGOProtos.Rpc.PokemonDisplayProto.Costume[c + '_NOEVOLVE'])) costume = test; else {
                 console.warn('Unrecognized costume', filename);
                 continue;
             }
