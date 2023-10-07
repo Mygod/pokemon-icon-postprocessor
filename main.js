@@ -1,108 +1,28 @@
 const child_process = require("child_process");
 const fs = require('fs');
 const path = require('path');
-const util = require('util');
 
 const axios = require('axios');
 const POGOProtos = require('@na-ji/pogo-protos');
 
-class PartialPokemonDisplay {
-    // costume and shiny will not appear in gamemaster
-    constructor(pokemonId, gender = 0, form = 0, evolution = 0) {
-        this.pokemonId = pokemonId;
-        this.gender = gender;
-        this.form = form;
-        this.evolution = evolution;
+function getFilename(display, defaultForms, costume = 0, shiny = false) {
+    let result = String(display.pokemonId);
+    if (display.evolution) {
+        result += '-e' + display.evolution;
     }
-
-    filename(costume = 0, shiny = false) {
-        let result = String(this.pokemonId);
-        if (this.evolution) {
-            result += '-e' + this.evolution;
-        }
-        if (this.form) {
-            result += '-f' + this.form;
-            if (this.evolution) console.warn(
-                'Found entry with both evolution and form set. This would not be compatible with addressable assets.');
-        }
-        if (costume) {
-            result += '-c' + costume;
-        }
-        if (this.gender) {
-            result += '-g' + this.gender;
-        }
-        if (shiny) {
-            result += '-shiny';
-        }
-        return result;
+    if (display.form && defaultForms[display.pokemonId] !== display.form) {
+        result += '-f' + display.form;
     }
-
-    [util.inspect.custom](depth, opts) {
-        return this.filename();
+    if (costume) {
+        result += '-c' + costume;
     }
-}
-
-function changeGender(other, gender = POGOProtos.Rpc.PokemonDisplayProto.Gender.FEMALE) {
-    return new PartialPokemonDisplay(other.pokemonId, gender, other.form, other.evolution);
-}
-
-function createFormTargets(formLookup, suffix) {
-    let formTargets = formLookup[suffix];
-    if (formTargets && formTargets.fallback) {
-        console.warn('Found', suffix, 'in the gamemaster. Fallback rule will be deactivated.')
-        formTargets = undefined;
+    if (display.gender) {
+        result += '-g' + display.gender;
     }
-    return formTargets === undefined ? (formLookup[suffix] = {
-        targets: [],
-        female: true
-    }) : formTargets;
-}
-
-function extractFormTargets(formLookup, template, pokemonId, computeSuffix, field = 'form') {
-    const pokemonIdString = String(pokemonId).padStart(3, '0');
-    const formSettings = template.data[Object.keys(template.data)[1]];
-    let forms = formSettings[Object.keys(formSettings)[1]];
-    if (forms === undefined) {
-        createFormTargets(formLookup, pokemonIdString + '_01').targets.push(
-            new PartialPokemonDisplay(pokemonId, POGOProtos.Rpc.PokemonDisplayProto.Gender.FEMALE));
-        const formTargets = createFormTargets(formLookup, pokemonIdString + '_00');
-        formTargets.targets.push(new PartialPokemonDisplay(pokemonId));
-        formTargets.female = false;
-        return;
+    if (shiny) {
+        result += '-shiny';
     }
-    let defaultAssetBundleSuffix = undefined;
-    for (const formData of forms) {
-        const keys = Object.keys(formData);
-        if (keys.length === 0) continue;
-        const form = formData[keys[0]];
-        const formId = computeSuffix(form);
-        if (!formId) {
-            console.warn('Unrecognized', field, form);
-            continue;
-        }
-        let assetBundleSuffix = formData.assetBundleSuffix || formData.assetBundleValue || 0;
-        if (defaultAssetBundleSuffix === assetBundleSuffix && field === 'form') {
-            continue;   // we expect the client to fallback automatically
-        }
-        const target = new PartialPokemonDisplay(pokemonId);
-        if (defaultAssetBundleSuffix === undefined && field === 'form') {
-            // the game uses the first form for Pokedex images
-            defaultAssetBundleSuffix = assetBundleSuffix;
-        } else {
-            target[field] = formId;
-        }
-        if (Number.isInteger(assetBundleSuffix)) {  // is actually assetBundleValue
-            if (assetBundleSuffix === 0 && ![592, 593, 668, 678, 710, 711, 720].includes(pokemonId)) {
-                createFormTargets(formLookup, pokemonIdString + '_01').targets.push(changeGender(target));
-            }
-            assetBundleSuffix = pokemonIdString + '_' + String(assetBundleSuffix).padStart(2, '0');
-        } else if (assetBundleSuffix.indexOf('_00_') >= 0) {
-            createFormTargets(formLookup, assetBundleSuffix.replace('_00_', '_01_')).targets.push(changeGender(target));
-        }
-        const formTargets = createFormTargets(formLookup, assetBundleSuffix);
-        formTargets.targets.push(target);
-        formTargets.female = false;
-    }
+    return result;
 }
 
 function convert(inDir, filename, targetPath) {
@@ -128,75 +48,46 @@ function convert(inDir, filename, targetPath) {
     outDir = outDir && path.resolve(outDir);
 
     console.log('Reading game master...');
-    const formLookup = {
-        '000': {    // substitute is not in gameMaster
-            targets: [new PartialPokemonDisplay(0)]
-        },
-        '150_51': {
-            targets: [new PartialPokemonDisplay(150, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_X)],
-            fallback: true
-        },
-        '150_52': {
-            targets: [new PartialPokemonDisplay(150, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA_Y)],
-            fallback: true
-        },
-        '303_51': {
-            targets: [new PartialPokemonDisplay(303, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
-        '319_51': {
-            targets: [new PartialPokemonDisplay(319, 0, 0, POGOProtos.Rpc.HoloTemporaryEvolutionId.TEMP_EVOLUTION_MEGA)],
-            fallback: true
-        },
-        '493_00': { // 493_11 is missing
-            targets: [new PartialPokemonDisplay(493)],
-            fallback: true
-        },
-    };
     const gameMaster = (await axios.get('https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json')).data;
-    const availablePokemon = [];
+    const defaultForms = {};
     for (const template of gameMaster) {
-        if (template.templateId.startsWith('FORMS_V')) {
-            const pokemonId = parseInt(template.templateId.substr(7, 4));
-            if (!pokemonId) {
-                console.warn('Unrecognized templateId', template.templateId);
-            } else {
-                extractFormTargets(formLookup, template, pokemonId, (form) => POGOProtos.Rpc.PokemonDisplayProto.Form[form]);
-            }
-        } else if (template.templateId.startsWith('TEMPORARY_EVOLUTION_V')) {
-            const pokemonId = parseInt(template.templateId.substr(21, 4));
-            if (!pokemonId) {
-                console.warn('Unrecognized templateId', template.templateId);
-            } else {
-                extractFormTargets(formLookup, template, pokemonId, (evolution) => {
-                    return POGOProtos.Rpc.HoloTemporaryEvolutionId[evolution];
-                }, 'evolution');
-            }
+        if (!template.templateId.startsWith('FORMS_V')) continue;
+        const pokemonId = parseInt(template.templateId.substr(7, 4));
+        if (!pokemonId) {
+            console.warn('Unrecognized templateId', template.templateId);
+            continue;
         }
-    }
-    for (const suffix1 of Object.keys(formLookup)) {
-        for (const suffix2 of Object.keys(formLookup)) {
-            if (suffix1 !== suffix2 && suffix1.startsWith(suffix2)) {
-                console.error('Illegal combinations found', suffix1, suffix2);
-                process.exit(1);
-            }
+        const formSettings = template.data[Object.keys(template.data)[1]];
+        let forms = formSettings[Object.keys(formSettings)[1]];
+        if (forms === undefined || forms.length === 0) continue;
+        const formData = forms[0];
+        const keys = Object.keys(formData);
+        if (keys.length === 0) continue;
+        const form = formData[keys[0]];
+        const formId = POGOProtos.Rpc.PokemonDisplayProto.Form[form];
+        if (!formId) {
+            console.warn('Unrecognized form', form);
+            continue;
         }
+        defaultForms[pokemonId] = formId;
     }
+
+    const legacyFormLookup = require('./legacy.json');
+    const availablePokemon = [];
 
     if (outDir) {
         await fs.promises.mkdir(outDir, { recursive: true });
     }
 
     const addressableAssetsRegex = /^pm(\d+)(?:\.f([^.]*))?(?:\.c([^.]+))?(?:\.g(\d+))?(\.s)?\.icon\.png$/;
-    const addressableAssetsDir = path.join(inDir, 'Addressable Assets');
-    for (const filename of await fs.promises.readdir(addressableAssetsDir)) {
-        if (!filename.endsWith('.png')) continue;
+    for (const filename of await fs.promises.readdir(inDir)) {
+        if (!filename.startsWith('pm') || !filename.endsWith('.icon.png')) continue;
         const match = addressableAssetsRegex.exec(filename);
         if (match === null) {
             console.warn('Unrecognized addressable asset', filename);
             continue;
         }
-        const display = new PartialPokemonDisplay(parseInt(match[1]));
+        const display = { pokemonId: parseInt(match[1]) };
         if (match[2] !== undefined && ((f) => {
             if (f === '') return !(display.form = POGOProtos.Rpc.PokemonDisplayProto.Form[
             POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_NORMAL']);
@@ -230,20 +121,20 @@ function convert(inDir, filename, targetPath) {
             }
         }
         if (match[4] !== undefined) display.gender = parseInt(match[4]);
-        const outputFilename = display.filename(costume, match[5] !== undefined);
+        const outputFilename = getFilename(display, defaultForms, costume, match[5] !== undefined);
         availablePokemon.push(outputFilename);
-        if (outDir) convert(addressableAssetsDir, filename, path.join(outDir, outputFilename + '.png'));
+        if (outDir) convert(inDir, filename, path.join(outDir, outputFilename + '.png'));
     }
 
-    let xerneasFixed = true;
     const aaFiles = new Set(availablePokemon);
     const missingAa = [];
-    for (const filename of await fs.promises.readdir(inDir)) {
+    const legacyDir = path.join(__dirname, 'legacy');
+    for (const filename of await fs.promises.readdir(legacyDir)) {
         if (!filename.endsWith('.png')) continue;
         const name = filename.substr(13);
         let suffix;
         let formTargets = null;
-        for (const [prefix, data] of Object.entries(formLookup)) {
+        for (const [prefix, data] of Object.entries(legacyFormLookup)) {
             if (name.startsWith(prefix)) {
                 suffix = name.substr(prefix.length);
                 formTargets = data;
@@ -252,7 +143,7 @@ function convert(inDir, filename, targetPath) {
         }
         let match;
         if (formTargets === null || (match = /^(?:_(\d+))?(_shiny)?(_old[12]?)?\.png$/.exec(suffix)) === null) {
-            console.warn('Unrecognized/unused asset', filename);
+            // skip warning since already handled in legacy.js: console.warn('Unrecognized/unused asset', filename);
             continue;
         }
         let targets = formTargets.targets;
@@ -263,15 +154,14 @@ function convert(inDir, filename, targetPath) {
                 console.warn('Unrecognized old asset', filename);
                 continue;
             }
-            xerneasFixed = false;
             if (match[3].endsWith('2')) continue;   // the weird colorless active mode shiny
-            targets = [new PartialPokemonDisplay(716, 0, POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE)];
+            targets = [{ pokemonId: 716, form: POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE }];
         }
         const costume = parseInt(match[1]) || 0;
         const shiny = match[2] !== undefined;
         let output = null;
         for (const target of targets) {
-            const outputFilename = target.filename(costume, shiny);
+            const outputFilename = getFilename(target, defaultForms, costume, shiny);
             if (aaFiles.has(outputFilename)) continue;
             missingAa.push(outputFilename);
             availablePokemon.push(outputFilename);
@@ -279,31 +169,16 @@ function convert(inDir, filename, targetPath) {
             const targetPath = path.join(outDir, outputFilename + '.png');
             if (output !== null) {
                 await fs.promises.copyFile(output, targetPath);
-            } else if (convert(inDir, filename, targetPath)) {
+            } else if (convert(legacyDir, filename, targetPath)) {
                 output = targetPath;
             }
         }
     }
 
-    if (xerneasFixed) console.warn('Workaround for Xerneas active form could be removed now');
     if (outDir) {
         await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(availablePokemon));
     }
 
-    let arceusFixed = true;
-    const pokemonIndex = new Set(availablePokemon);
-    for (const [suffix, data] of Object.entries(formLookup)) {
-        if (!data.hit && !data.female) {
-            if (suffix === '493_11') {
-                arceusFixed = false;
-            } else if (data.targets.some(target => !pokemonIndex.has(target.filename()))) {
-                console.warn('Found form/temporary evolution with no matching assets', suffix, data);
-            }
-        }
-    }
-    if (arceusFixed) {
-        console.warn('Asset for Arceus normal form has been added');
-    }
     if (missingAa.length) {
         console.info(missingAa.length, 'assets have not migrated to addressable asset:', JSON.stringify(missingAa));
     }
