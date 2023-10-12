@@ -5,22 +5,25 @@ const path = require('path');
 const axios = require('axios');
 const POGOProtos = require('@na-ji/pogo-protos');
 
+const uicons = process.argv.includes('-u');
+const prefix = uicons ? '_' : '-'
+
 function getFilename(display, defaultForms, costume = 0, shiny = false) {
     let result = String(display.pokemonId);
     if (display.evolution) {
-        result += '-e' + display.evolution;
+        result += prefix + 'e' + display.evolution;
     }
     if (display.form && defaultForms[display.pokemonId] !== display.form) {
-        result += '-f' + display.form;
+        result += prefix + 'f' + display.form;
     }
     if (costume) {
-        result += '-c' + costume;
+        result += prefix + 'c' + costume;
     }
     if (display.gender) {
-        result += '-g' + display.gender;
+        result += prefix + 'g' + display.gender;
     }
     if (shiny) {
-        result += '-shiny';
+        result += uicons ? '_s' : '-shiny';
     }
     return result;
 }
