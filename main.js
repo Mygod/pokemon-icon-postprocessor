@@ -75,7 +75,6 @@ function convert(inDir, filename, targetPath) {
         defaultForms[pokemonId] = formId;
     }
 
-    const legacyFormLookup = require('./legacy.json');
     const availablePokemon = [];
 
     if (outDir) {
@@ -130,8 +129,14 @@ function convert(inDir, filename, targetPath) {
     }
 
     const aaFiles = new Set(availablePokemon);
-    const missingAa = [];
     const legacyDir = path.join(__dirname, 'legacy');
+    const legacyFormLookup = {
+        "150_51":{"targets":[{"pokemonId":150,"evolution":2}]},
+        "150_52":{"targets":[{"pokemonId":150,"evolution":3}]},
+        "303_51":{"targets":[{"pokemonId":303,"evolution":1}]},
+        "319_51":{"targets":[{"pokemonId":319,"evolution":1}]},
+        "716_00":{"targets":[{"pokemonId":716,"form":POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE}]},
+    };
     for (const filename of await fs.promises.readdir(legacyDir)) {
         if (!filename.endsWith('.png')) continue;
         const name = filename.substr(13);
@@ -145,28 +150,19 @@ function convert(inDir, filename, targetPath) {
             }
         }
         let match;
-        if (formTargets === null || (match = /^(?:_(\d+))?(_shiny)?(_old[12]?)?\.png$/.exec(suffix)) === null) {
-            // skip warning since already handled in legacy.js: console.warn('Unrecognized/unused asset', filename);
+        if (formTargets === null || (match = /^(?:_(\d+))?(_shiny)?\.png$/.exec(suffix)) === null) {
             continue;
         }
         let targets = formTargets.targets;
-        if (targets.length > 1) console.warn('Multiple targets found for asset', filename, targets);
-        formTargets.hit = true;
-        if (match[3] !== undefined) {
-            if (targets[0].pokemonId !== 716) {
-                console.warn('Unrecognized old asset', filename);
-                continue;
-            }
-            if (match[3].endsWith('2')) continue;   // the weird colorless active mode shiny
-            targets = [{ pokemonId: 716, form: POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE }];
-        }
         const costume = parseInt(match[1]) || 0;
         const shiny = match[2] !== undefined;
         let output = null;
         for (const target of targets) {
             const outputFilename = getFilename(target, defaultForms, costume, shiny);
-            if (aaFiles.has(outputFilename)) continue;
-            missingAa.push(outputFilename);
+            if (aaFiles.has(outputFilename)) {
+                console.warn(`${outputFilename} can now be removed from legacy`);
+                continue;
+            }
             availablePokemon.push(outputFilename);
             if (!outDir) continue;
             const targetPath = path.join(outDir, outputFilename + '.png');
@@ -180,10 +176,5 @@ function convert(inDir, filename, targetPath) {
 
     if (outDir) {
         await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(availablePokemon));
-    }
-
-    if (missingAa.length) {
-        console.info(missingAa.length, 'assets have not migrated to addressable asset:', JSON.stringify(missingAa));
-    }
-    if (!outDir) console.log(JSON.stringify(availablePokemon));
+    } else console.log(JSON.stringify(availablePokemon));
 })();
