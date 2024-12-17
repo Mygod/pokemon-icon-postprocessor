@@ -28,19 +28,19 @@ You can invoke it by running `node migrate.js pmsf /path/to/input/dir /path/to/o
 Output file name format follows the "Intermapping Cooperative Object Naming Standard" (ICONS). (customizable via editing the code directly)
 
 ```
-<pokemon id>[-e<temp evolution id>][-f<form id>][-c<costume id>][-g<gender id>][-shiny].png
+<pokemon id>[-b<bread mode id>][-e<temp evolution id>][-f<form id>][-c<costume id>][-g<gender id>][-shiny].png
 ```
 
 Additionally, you will find a `index.json` file containing an JSON array of all the filenames (minus extensions) for you to do fallbacks locally.
 
 You should use the following fallback algorithm to determine the best pokemon icon:
 
-1. Try `p-e-f-c-g-shiny` (11111)
-2. Try `p-e-f-c-g` (11110)
-3. Try `p-e-f-c-shiny` (11101)  
+1. Try `b-p-e-f-c-g-shiny` (111111)
+2. Try `b-p-e-f-c-g` (111110)
+3. Try `b-p-e-f-c-shiny` (111101)  
 ...
-31. Try `p-shiny` (00001)
-32. Try `p.png` (00000)
+31. Try `p-shiny` (000001)
+32. Try `p.png` (000000)
 33. Use `0.png` as substitute pokemon
 
 Reference implementation in node.js:
@@ -52,20 +52,23 @@ const { Sema } = require('async-sema')
 const sema = new Sema(1)
 const availablePokemon = {}
 
-function resolvePokemonIcon(availablePokemon, pokemonId, form = 0, evolution = 0, gender = 0, costume = 0,
-                            shiny = false) {
+function resolvePokemonIcon(availablePokemon, pokemonId, form = 0, evolution = 0, breadMode = 0, gender = 0,
+                            costume = 0, shiny = false) {
+    const breadModeSuffixes = breadMode ? ['-b' + breadMode, ''] : ['']
     const evolutionSuffixes = evolution ? ['-e' + evolution, ''] : ['']
     const formSuffixes = form ? ['-f' + form, ''] : ['']
     const costumeSuffixes = costume ? ['-c' + costume, ''] : ['']
     const genderSuffixes = gender ? ['-g' + gender, ''] : ['']
     const shinySuffixes = shiny ? ['-shiny', ''] : ['']
+    for (const breadModeSuffix of breadModeSuffixes) {
     for (const evolutionSuffix of evolutionSuffixes) {
     for (const formSuffix of formSuffixes) {
     for (const costumeSuffix of costumeSuffixes) {
     for (const genderSuffix of genderSuffixes) {
     for (const shinySuffix of shinySuffixes) {
-        const result = `${pokemonId}${evolutionSuffix}${formSuffix}${costumeSuffix}${genderSuffix}${shinySuffix}`
+        const result = `${pokemonId}${breadModeSuffix}${evolutionSuffix}${formSuffix}${costumeSuffix}${genderSuffix}${shinySuffix}`
         if (availablePokemon.has(result)) return result
+    }
     }
     }
     }

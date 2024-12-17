@@ -10,6 +10,9 @@ const prefix = uicons ? '_' : '-'
 
 function getFilename(display, defaultForms, costume = 0, shiny = false) {
     let result = String(display.pokemonId);
+    if (display.breadMode) {
+        result += prefix + 'b' + display.breadMode;
+    }
     if (display.evolution) {
         result += prefix + 'e' + display.evolution;
     }
@@ -92,7 +95,11 @@ function convert(inDir, filename, targetPath) {
         const display = { pokemonId: parseInt(match[1]) };
         if (match[2] !== undefined && ((f) => {
             if (f === '') return !(display.form = POGOProtos.Rpc.PokemonDisplayProto.Form[
-            POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_NORMAL']);
+                POGOProtos.Rpc.HoloPokemonId[display.pokemonId] + '_NORMAL']);
+            if (f === 'GIGANTAMAX') {
+                display.breadMode = 2;
+                return false;
+            }
             let test;
             if ((test = POGOProtos.Rpc.HoloTemporaryEvolutionId['TEMP_EVOLUTION_' + f])) {
                 display.evolution = test;
@@ -133,7 +140,6 @@ function convert(inDir, filename, targetPath) {
     const legacyFormLookup = {
         "150_51":{"targets":[{"pokemonId":150,"evolution":2}]},
         "150_52":{"targets":[{"pokemonId":150,"evolution":3}]},
-        "303_51":{"targets":[{"pokemonId":303,"evolution":1}]},
         "319_51":{"targets":[{"pokemonId":319,"evolution":1}]},
         "716_00":{"targets":[{"pokemonId":716,"form":POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE}]},
     };
