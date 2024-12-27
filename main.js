@@ -78,7 +78,7 @@ function convert(inDir, filename, targetPath) {
         defaultForms[pokemonId] = formId;
     }
 
-    const availablePokemon = [];
+    const availablePokemon = {};
 
     if (outDir) {
         await fs.promises.mkdir(outDir, { recursive: true });
@@ -131,11 +131,15 @@ function convert(inDir, filename, targetPath) {
         }
         if (match[4] !== undefined) display.gender = parseInt(match[4]);
         const outputFilename = getFilename(display, defaultForms, costume, match[5] !== undefined);
-        availablePokemon.push(outputFilename);
+        if (availablePokemon[outputFilename]) {
+            let useOld = filename.length <= availablePokemon[outputFilename].length;
+            console.info('duplicate', availablePokemon[outputFilename], useOld ? '>' : '<', filename);
+            if (useOld) continue;
+        }
+        availablePokemon[outputFilename] = filename;
         if (outDir) convert(inDir, filename, path.join(outDir, outputFilename + '.png'));
     }
 
-    const aaFiles = new Set(availablePokemon);
     const legacyDir = path.join(__dirname, 'legacy');
     const legacyFormLookup = {
         "150_51":{"targets":[{"pokemonId":150,"evolution":2}]},
@@ -165,11 +169,11 @@ function convert(inDir, filename, targetPath) {
         let output = null;
         for (const target of targets) {
             const outputFilename = getFilename(target, defaultForms, costume, shiny);
-            if (aaFiles.has(outputFilename)) {
-                console.warn(`${outputFilename} can now be removed from legacy`);
+            if (availablePokemon[outputFilename]) {
+                console.warn(`${outputFilename} is now available as ${availablePokemon[outputFilename]} and can now be removed from legacy`);
                 continue;
             }
-            availablePokemon.push(outputFilename);
+            availablePokemon[outputFilename] = filename;
             if (!outDir) continue;
             const targetPath = path.join(outDir, outputFilename + '.png');
             if (output !== null) {
@@ -181,6 +185,6 @@ function convert(inDir, filename, targetPath) {
     }
 
     if (outDir) {
-        await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(availablePokemon));
-    } else console.log(JSON.stringify(availablePokemon));
+        await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(Object.keys(availablePokemon)));
+    } else console.log(JSON.stringify(Object.keys(availablePokemon)));
 })();
