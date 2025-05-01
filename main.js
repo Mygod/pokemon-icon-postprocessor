@@ -101,6 +101,10 @@ function convert(inDir, filename, targetPath) {
                 return false;
             }
             let test;
+            if ((test = POGOProtos.Rpc.BreadModeEnum.Modifier[f])) {
+                display.breadMode = test;
+                return false;
+            }
             if ((test = POGOProtos.Rpc.HoloTemporaryEvolutionId['TEMP_EVOLUTION_' + f])) {
                 display.evolution = test;
                 return false;
@@ -142,9 +146,6 @@ function convert(inDir, filename, targetPath) {
 
     const legacyDir = path.join(__dirname, 'legacy');
     const legacyFormLookup = {
-        "150_51":{"targets":[{"pokemonId":150,"evolution":2}]},
-        "150_52":{"targets":[{"pokemonId":150,"evolution":3}]},
-        "319_51":{"targets":[{"pokemonId":319,"evolution":1}]},
         "716_00":{"targets":[{"pokemonId":716,"form":POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE}]},
     };
     for (const filename of await fs.promises.readdir(legacyDir)) {
