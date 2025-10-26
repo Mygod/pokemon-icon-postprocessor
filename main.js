@@ -5,8 +5,114 @@ const path = require('path');
 const axios = require('axios');
 const POGOProtos = require('@na-ji/pogo-protos');
 
-const uicons = process.argv.includes('-u');
-const prefix = uicons ? '_' : '-'
+let uicons = false;
+let prefix = '-';
+
+const defaultMasterfilePath = path.resolve(__dirname, '..', 'Masterfile-Generator', 'master-latest-uicons.json');
+const remoteMasterfileUrl = 'https://raw.githubusercontent.com/WatWowMap/Masterfile-Generator/refs/heads/master/master-latest-uicons.json';
+
+function parseArgs(argv) {
+    const positional = [];
+    let masterfilePath;
+    let useUicons = false;
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i];
+        if (arg === '-u' || arg === '--uicons') {
+            useUicons = true;
+            continue;
+        }
+        if (arg === '-m' || arg === '--master' || arg === '--masterfile') {
+            if (i + 1 >= argv.length) {
+                throw new Error('Missing value for --masterfile');
+            }
+            masterfilePath = argv[++i];
+            continue;
+        }
+        positional.push(arg);
+    }
+    return { positional, masterfilePath, useUicons };
+}
+
+async function readMasterfile(masterfilePath, allowRemoteFallback) {
+    if (masterfilePath) {
+        const resolvedPath = path.resolve(masterfilePath);
+        console.log('Reading masterfile from', resolvedPath);
+        try {
+            return await fs.promises.readFile(resolvedPath, 'utf8');
+        } catch (error) {
+            throw new Error(`Unable to read masterfile at ${resolvedPath}: ${error.message}`);
+        }
+    }
+
+    const resolvedDefaultPath = defaultMasterfilePath;
+    try {
+        console.log('Reading masterfile from', resolvedDefaultPath);
+        return await fs.promises.readFile(resolvedDefaultPath, 'utf8');
+    } catch (error) {
+        if (!allowRemoteFallback) {
+            throw new Error(`Unable to read masterfile at ${resolvedDefaultPath}: ${error.message}`);
+        }
+        console.warn(`Unable to read masterfile at ${resolvedDefaultPath}: ${error.message}`);
+    }
+
+    const url = remoteMasterfileUrl;
+    console.log('Fetching masterfile from', url);
+    const response = await axios.get(url, { responseType: 'text' });
+    return response.data;
+}
+
+function extractDefaultForms(masterfile) {
+    const defaultForms = {};
+    if (masterfile && typeof masterfile === 'object') {
+        if (masterfile.defaultForms && typeof masterfile.defaultForms === 'object') {
+            for (const [pokemonId, formId] of Object.entries(masterfile.defaultForms)) {
+                const numericId = Number(pokemonId);
+                const numericForm = Number(formId);
+                if (!Number.isNaN(numericId) && !Number.isNaN(numericForm)) {
+                    defaultForms[numericId] = numericForm;
+                }
+            }
+        }
+        if ((!masterfile.defaultForms || Object.keys(defaultForms).length === 0) && masterfile.pokemon && typeof masterfile.pokemon === 'object') {
+            for (const [pokemonId, data] of Object.entries(masterfile.pokemon)) {
+                const numericId = Number(pokemonId);
+                if (Number.isNaN(numericId) || !data || typeof data !== 'object') continue;
+                const candidate = data.defaultFormId ?? data.default_form_id ?? data.default_form;
+                if (candidate === undefined || candidate === null) continue;
+                const numericForm = Number(candidate);
+                if (!Number.isNaN(numericForm)) {
+                    defaultForms[numericId] = numericForm;
+                }
+            }
+        }
+    }
+    return defaultForms;
+}
+
+async function loadDefaultForms(masterfilePath) {
+    const raw = await readMasterfile(masterfilePath, !masterfilePath);
+    let masterfile;
+    try {
+        masterfile = JSON.parse(raw);
+    } catch (error) {
+        throw new Error(`Failed to parse masterfile: ${error.message}`);
+    }
+    let defaultForms = extractDefaultForms(masterfile);
+    if (Object.keys(defaultForms).length === 0) {
+        console.warn('Masterfile is missing default form data, attempting remote masterfile...');
+        try {
+            const response = await axios.get(remoteMasterfileUrl, { responseType: 'text' });
+            const fallbackData = JSON.parse(response.data);
+            defaultForms = extractDefaultForms(fallbackData);
+        } catch (error) {
+            console.warn(`Failed to fetch remote masterfile from ${remoteMasterfileUrl}: ${error.message}`);
+        }
+    }
+    if (Object.keys(defaultForms).length === 0) {
+        throw new Error('Masterfile does not contain default form data.');
+    }
+    return defaultForms;
+}
 
 function getFilename(display, defaultForms, costume = 0, shiny = false) {
     let result = String(display.pokemonId);
@@ -44,38 +150,37 @@ function convert(inDir, filename, targetPath) {
 }
 
 (async () => {
-    let inDir = process.argv[2];
-    let outDir = process.argv[3];
+    let parsedArgs;
+    try {
+        parsedArgs = parseArgs(process.argv.slice(2));
+    } catch (error) {
+        console.error(error.message);
+        console.error('Usage: node main.js [options] <input dir> [<output dir>]');
+        console.error('Options: -u/--uicons, -m/--masterfile <path>');
+        process.exit(1);
+    }
+    let inDir = parsedArgs.positional[0];
+    let outDir = parsedArgs.positional[1];
+    uicons = parsedArgs.useUicons;
+    prefix = uicons ? '_' : '-';
     if (!inDir) {
-        console.error('Usage: node main.js <input dir> [<output dir>]');
+        console.error('Usage: node main.js [options] <input dir> [<output dir>]');
+        console.error('Options: -u/--uicons, -m/--masterfile <path>');
         process.exit(1);
     }
     inDir = path.resolve(inDir);
     outDir = outDir && path.resolve(outDir);
 
-    console.log('Reading game master...');
-    const gameMaster = (await axios.get('https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json')).data;
-    const defaultForms = {};
-    for (const template of gameMaster) {
-        if (!template.templateId.startsWith('FORMS_V')) continue;
-        const pokemonId = parseInt(template.templateId.substr(7, 4));
-        if (!pokemonId) {
-            console.warn('Unrecognized templateId', template.templateId);
-            continue;
-        }
-        const formSettings = template.data[Object.keys(template.data)[1]];
-        let forms = formSettings[Object.keys(formSettings)[1]];
-        if (forms === undefined || forms.length === 0) continue;
-        const formData = forms[0];
-        const keys = Object.keys(formData);
-        if (keys.length === 0) continue;
-        const form = formData[keys[0]];
-        const formId = POGOProtos.Rpc.PokemonDisplayProto.Form[form];
-        if (!formId) {
-            console.warn('Unrecognized form', form);
-            continue;
-        }
-        defaultForms[pokemonId] = formId;
+    const masterfilePath = parsedArgs.masterfilePath
+        ? path.resolve(process.cwd(), parsedArgs.masterfilePath)
+        : null;
+    let defaultForms;
+    try {
+        defaultForms = await loadDefaultForms(masterfilePath);
+    } catch (error) {
+        console.error(error.message);
+        console.error('Run the Masterfile-Generator uicons template before executing this script or provide a custom path via --masterfile.');
+        process.exit(1);
     }
 
     const availablePokemon = {};
@@ -146,7 +251,7 @@ function convert(inDir, filename, targetPath) {
 
     const legacyDir = path.join(__dirname, 'legacy');
     const legacyFormLookup = {
-        "716_00":{"targets":[{"pokemonId":716,"form":POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE}]},
+        "716_00":{"targets":[{"pokemonId":POGOProtos.Rpc.HoloPokemonId.XERNEAS,"form":POGOProtos.Rpc.PokemonDisplayProto.Form.XERNEAS_ACTIVE}]},
     };
     for (const filename of await fs.promises.readdir(legacyDir)) {
         if (!filename.endsWith('.png')) continue;
