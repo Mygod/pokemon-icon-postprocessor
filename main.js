@@ -139,7 +139,7 @@ function getFilename(display, defaultForms, costume = 0, shiny = false) {
 
 function convert(inDir, filename, targetPath) {
     const sourcePath = path.join(inDir, filename);
-    const child = child_process.spawnSync('convert', ['-trim', '-fuzz', '1%', sourcePath, targetPath], {
+    const child = child_process.spawnSync('magick', [sourcePath, '-fuzz', '1%', '-trim', targetPath], {
         stdio: 'inherit'
     });
     if (child.error || child.status) {

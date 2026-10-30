@@ -12,7 +12,7 @@ Source: https://github.com/Mygod/pokicons
 
 ## Usage
 
-Install imagemagick (and optionally your favorite PNG compressor).
+Install ImageMagick 7 (and optionally your favorite PNG compressor).
 
 ```sh
 npm install
